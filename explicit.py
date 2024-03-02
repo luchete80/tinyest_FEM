@@ -72,7 +72,7 @@ def explicit_finite_element_solver(u, v, M, dNdx, nodal_displacements, nodal_vel
         D = strain_rate_tensor(F)
 
         # Update stress and strain using plasticity with von Mises criterion and Jaumann rate
-        plasticity_update(sigma, epsilon, D, dt)
+        #plasticity_update(sigma, epsilon, D, dt)
 
         # Hourglass control force
         F_hourglass = hourglass_force(u, epsilon)
@@ -83,6 +83,14 @@ def explicit_finite_element_solver(u, v, M, dNdx, nodal_displacements, nodal_vel
         # Update displacement
         u += dt * v
 
+        # Print or save nodal displacements
+        if step % 10 == 0:  # Print every 10 steps
+            print("Time step:", step)
+            print("Nodal Displacements:")
+            for i in range(len(nodal_displacements)):
+                print("Node {}: {}".format(i, nodal_displacements[i]))
+            print("\n")
+            
 # Main function
 def main():
     # Define nodal velocities (dummy data for demonstration)
