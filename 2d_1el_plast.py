@@ -34,26 +34,6 @@ gauss_points = np.array([[-0.577350269, -0.577350269],
                          [-0.577350269,  0.577350269]])
 gauss_weights = np.array([1, 1, 1, 1])
 
-# J2 plasticity function
-def J2_plasticity(sigma, delta_gamma, dt):
-    # Von Mises stress
-    s_eq = np.sqrt(3 / 2 * np.sum(sigma ** 2))
-    
-    # Check if yielding occurs
-    if s_eq > yield_stress:
-        # Plastic multiplier
-        dlambda = (s_eq - yield_stress) / (3 * H + 0.0001)
-        # Plastic strain increment
-        delta_epsilon_p = dlambda * np.sign(sigma) / (1 + 3 * H * dt)
-        # Update plastic strain
-        epsilon_p = epsilon_p_prev + delta_epsilon_p
-        # Update stress
-        sigma -= 2 * H * dlambda * np.sign(sigma)
-    else:
-        # No plastic strain increment
-        delta_epsilon_p = np.zeros_like(sigma)
-    
-    return sigma, delta_epsilon_p
 
 # Finite element strain rate calculation
 def calculate_strain_rate(velocities):
@@ -90,6 +70,21 @@ def leapfrog_integration(strain_rate, stresses, dt):
         stresses = stresses_next
     return strain
 
+# J2 plasticity function to update stresses
+def j2_plasticity(strain_rate, stresses, dt):
+    dev_strain_rate = strain_rate - np.trace(strain_rate) / 3 * np.eye(3)  # Deviatoric strain rate
+    dev_stresses = stresses - np.trace(stresses) / 3 * np.eye(3)  # Deviatoric stresses
+    dev_strain_rate_norm = np.sqrt(2 / 3 * np.sum(dev_strain_rate ** 2))  # Norm of deviatoric strain rate
+    if dev_strain_rate_norm > 0:
+        dev_stresses += 2 * E / (2 * E + 3 * yield_stress) * dev_strain_rate_norm * dev_strain_rate * dt
+        dev_stresses /= np.sqrt(1 + 3 / (2 * E) * np.sum(dev_stresses ** 2))
+    return dev_stresses + np.trace(stresses) / 3 * np.eye(3)  # Total stresses
+
+# Calculate stresses from strain rate
+def calculate_stresses(strain_rate, stresses, dt):
+    updated_stresses = j2_plasticity(strain_rate, stresses, dt)
+    return updated_stresses
+
 # Calculate element forces from stresses
 def calculate_element_forces(stresses):
     element_forces = np.dot(np.array([[1, nu, 0], [nu, 1, 0], [0, 0, (1 - nu) / 2]]), stresses)
@@ -110,13 +105,12 @@ def calculate_velocity(acceleration, dt):
 # Example usage
 velocities = np.array([[1, 0], [2, 0], [2, 1], [1, 1]])  # Example velocities at nodes
 strain_rate = calculate_strain_rate(velocities)
-stresses = np.array([[100e6, 50e6, 0], [50e6, 150e6, 0], [0, 0, 75e6]])  # Example stresses
+initial_stresses = np.zeros((3, 3))  # Initial stresses
 dt = 0.01  # Time step
-epsilon_p_prev = np.zeros_like(stresses)  # Initial plastic strain
-strain = leapfrog_integration(strain_rate, stresses, dt)
-element_forces = calculate_element_forces(stresses)
-acceleration = calculate_acceleration(element_forces)
-velocity = calculate_velocity(acceleration, dt)
+updated_stresses = calculate_stresses(strain_rate, initial_stresses, dt)
+print("Updated Stresses:")
+print(updated_stresses)
+
 print("Strain:")
 print(strain)
 print("Element Forces:")
