@@ -108,6 +108,8 @@ strain_rate = calculate_strain_rate(velocities)
 initial_stresses = np.zeros((3, 3))  # Initial stresses
 dt = 0.01  # Time step
 updated_stresses = calculate_stresses(strain_rate, initial_stresses, dt)
+strain  = leapfrog_integration(strain_rate, stresses, dt)
+
 print("Updated Stresses:")
 print(updated_stresses)
 
