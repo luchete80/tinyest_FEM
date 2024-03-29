@@ -75,10 +75,10 @@ def explicit_finite_element_solver(u, v, M, dNdx, nodal_displacements, nodal_vel
         #plasticity_update(sigma, epsilon, D, dt)
 
         # Hourglass control force
-        F_hourglass = hourglass_force(u, epsilon)
+        # F_hourglass = hourglass_force(u, epsilon)
 
         # Update velocity
-        v += dt * np.linalg.solve(M, F_hourglass)
+        # v += dt * np.linalg.solve(M, F_hourglass)
 
         # Update displacement
         u += dt * v
@@ -103,6 +103,7 @@ def main():
     # Solve the problem using explicit finite element method
     u = np.zeros(8)  # Displacement vector
     v = np.zeros(8)  # Velocity vector
+    v[1] = -1.
     M = np.eye(8)  # Mass matrix (dummy identity matrix)
     nodal_displacements = np.zeros(24)  # Nodal displacements (dummy initial values)
     explicit_finite_element_solver(u, v, M, dNdx, nodal_displacements, nodal_velocities)
