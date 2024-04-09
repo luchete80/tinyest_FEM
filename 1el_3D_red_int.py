@@ -14,22 +14,22 @@ m_gp_count = 1
 dNdX = np.zeros((m_dim, m_nodxelem)) 
 dNdrs = np.zeros((m_dim, m_nodxelem)) 
 # Define shape functions and their derivatives for 2D quadrilateral element
-def shape_functions(xi, eta):
-    dNdX_ = np.zeros((m_dim, m_nodxelem))
-    N = np.array([0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125])
-    # dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
-    # dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
-    return N, dNdX_
-    print(dNdX)
-# Gauss quadrature points and weights
-gauss_points = np.array([[-0.577350269, -0.577350269],
-                         [ 0.577350269, -0.577350269],
-                         [ 0.577350269,  0.577350269],
-                         [-0.577350269,  0.577350269]])
+# def shape_functions(xi, eta):
+    # dNdX_ = np.zeros((m_dim, m_nodxelem))
+    # N = np.array([0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125])
+    # # dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
+    # # dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
+    # return N, dNdX_
+    # print(dNdX)
+# # Gauss quadrature points and weights
+# gauss_points = np.array([[-0.577350269, -0.577350269],
+                         # [ 0.577350269, -0.577350269],
+                         # [ 0.577350269,  0.577350269],
+                         # [-0.577350269,  0.577350269]])
 
-gauss_weights = np.array([1, 1, 1, 1])
+#gauss_weights = np.array([1, 1, 1, 1])
+w = 8.0 #FAUSS 
 
-gp_count = len(gauss_points)
 
 # Finite element strain rate calculation
 def calculate_jacobian(x2):
@@ -60,22 +60,20 @@ def calculate_jacobian(x2):
     return J,dNdX 
 
 def velocity_gradient_tensor(dNdX, vel):
-    grad_v = np.zeros((m_gp_count,m_dim, m_dim))
-    for gp in range (m_gp_count):
-        for I in range(m_dim): 
-            for J in range(m_dim):
-                for k in range(m_nodxelem): 
-                    #grad_v[gp,I, J] += dNdX[gp, J, k] * vel[k * m_dim + I]
-                    grad_v[gp,I, J] += dNdX[J, k] * vel[k, I]
+    grad_v = np.zeros((m_dim, m_dim))
+    for I in range(m_dim): 
+        for J in range(m_dim):
+            for k in range(m_nodxelem): 
+                #grad_v[gp,I, J] += dNdX[gp, J, k] * vel[k * m_dim + I]
+                grad_v[I, J] += dNdX[J, k] * vel[k, I]
     return grad_v
 
 def calc_str_rate (dNdX,velocities):
-    str_rate = np.zeros((m_gp_count,m_dim, m_dim))
-    for gp in range (m_gp_count):
-        grad_v = velocity_gradient_tensor(dNdX, velocities)
-        print("Velocity gradients\n" ,grad_v[0])
+    str_rate = np.zeros((m_dim, m_dim))
+    grad_v = velocity_gradient_tensor(dNdX, velocities)
+    print("Velocity gradients\n" ,grad_v[0])
 
-        str_rate[gp] = 0.5*(grad_v[0]+grad_v[0].T)
+    str_rate = 0.5*(grad_v[0]+grad_v[0].T)
     print("strain rate:\n" ,str_rate)
     return str_rate
 
@@ -102,11 +100,11 @@ def calculate_stress(eps,dNdX):
   
   # #!!!! PLAIN STRAIN
   # #c = dom%mat_E / ((1.0+dom%mat_nu)*(1.0-2.0*dom%mat_nu))
-    for gp in range(len(gauss_points)):
-        stress[gp,0,0] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
-        stress[gp,1,1] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
-        stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
-    return stress
+
+    stress[0,0] = c * ((1.0-nu)*eps[0,0] + nu*eps[1,1])
+    stress[1,1] = c * ((1.0-nu)*eps[0,0] + nu*eps[1,1])
+    stress[0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[0,1] 
+
     
 
 # Define nodal velocities (dummy data for demonstration)
@@ -115,7 +113,8 @@ vel[5] = vel[7] = -1.0
     
 x    =  np.array([[0., 0.,0.], [0.1, 0.,0.], [0.1, 0.1,0.0], [0., 0.1,0.0],
                   [0., 0.,0.1], [0.1, 0.,0.1], [0.1, 0.1,0.1], [0., 0.1,0.1]])                  
-velocities = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example velocities at nodes
+velocities = np.array([[0, 0,0], [0, 0, 0], [0,0, 0], [0,0, 0],
+                      [0, 0,0], [0, 0, 0], [0,0, -1], [0,0, -1]])  # Example velocities at nodes
 #strain_rate = calculate_strain_rate(velocities)
 J = calculate_jacobian(x)
 print ("Jacobian\n", J[0])
