@@ -15,9 +15,9 @@ element_length = 1.0   # Length of the element
 vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
-dt = 0.8e-5
-tf = dt
-# tf = 1.0e-3    
+dt = 0.1e-5
+# tf = dt
+tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -119,7 +119,7 @@ def calc_str_rate (dNdX,v):
         grad_v = velocity_gradient_tensor(dNdX, v)
         print("Velocity gradients\n" ,grad_v[0])
 
-        str_rate[gp] = 0.5*(grad_v[0]+grad_v[0].T)
+        str_rate[gp] = 0.5*(grad_v[gp]+grad_v[gp].T)
     print("strain rate:\n" ,str_rate)
     return str_rate
 
