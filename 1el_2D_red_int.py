@@ -9,14 +9,15 @@ m_nodxelem = 4
 
 red_int = False
 element_length = 1.0   # Length of the element
-
+  
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-    
+tf = dt
+# tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -172,7 +173,8 @@ gamma = 1.5 - alpha;
 
 print ("V", a)
 ################################# MAIN LOOP ###################################
-for step in range(1000):
+t = 0.0
+while (t < tf):
     # !!! PREDICTION PHASE
     u = dt * (v + (0.5 - beta) * dt * prev_a)
     # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
@@ -186,14 +188,15 @@ for step in range(1000):
     # nod_mass = vol_0 * rho / m_nodxelem 
 
     str_rate = calc_str_rate (dNdX,v)
-    print ("strain rate\n",str_rate)
+    # print ("strain rate\n",str_rate)
     # strain =  strain + calc_strain(str_rate,dt)
     strain =  strain + calc_strain(str_rate,dt)
-    print ("strain \n",strain)
+    # print ("strain \n",strain)
     stress =  calc_stress(strain,dt)
-    print ("stress\n",stress)
+    # print ("stress\n",stress)
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
+    
     a = a - alpha * prev_a
     a = a / (1.0 - alpha)
     v = v + gamma * dt * a  
@@ -209,13 +212,14 @@ for step in range(1000):
     # time = time + dt
 
     u_tot += u 
+    t+= dt
 str_rate = calc_str_rate (dNdX,v)
     
 print ("DISPLACEMENTS\n",u_tot)
-print (strain)
-print("STRESS")
-print (stress)
-print("strain rate:\n" ,str_rate[0])
+# print (strain)
+# print("STRESS")
+# print (stress)
+# print("strain rate:\n" ,str_rate[0])
 
 
     
