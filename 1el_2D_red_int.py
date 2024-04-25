@@ -1,6 +1,6 @@
 import numpy as np
 # Define material properties
-E   = 200e9  # Young's modulus in Pa
+E   = 206e9  # Young's modulus in Pa
 nu  = 0.3   # Poisson's ratio
 rho = 7850.0
 m_dim = 2
@@ -84,22 +84,6 @@ def calc_vol(detJ):
       vol += detJ[gp] * gauss_weights[gp]
       print ("vol " + str(vol))
   return vol
-# !!!!! ASSUME VOLUME IS ALREADY CALCULATED
-# subroutine calc_elem_density ()
-  # implicit none
-  # real(fp_kind), dimension(dim,dim) :: F !def gradient
-  # real(fp_kind), dimension(nodxelem,dim) :: x !def gradient
-  
-  # integer :: e, n, gp
-  # do e = 1, elem_count
-    # do gp=1, elem%gausspc(e)
-    # !if (elem%gausspc(e) .eq. 1) then
-      # elem%rho(e,gp) = elem%rho_0(e,gp)*elem%vol_0(e)/elem%vol(e) !IS THE SAME
-    # end do
-  # end do
-# end subroutine
-
-
 
 def velocity_gradient_tensor(dNdX, vel):
     grad_v = np.zeros((m_gp_count,m_dim, m_dim))
@@ -122,14 +106,6 @@ def calc_str_rate (dNdX,v):
     return str_rate
 
 
-
-# Define material matrix for plane strain
-def material_matrix():
-    C = E / ((1+nu)*(1 - 2.0*nu)) * np.array([[1-nu, nu, 0],
-                                     [nu, 1-nu, 0],
-                                     [0, 0, (1 - 2.0*nu) ]])
-    return C
-
 def calc_strain(str_rate,dt):
     strain = np.zeros((m_gp_count,m_dim, m_dim))
     strain = dt * str_rate
@@ -137,16 +113,11 @@ def calc_strain(str_rate,dt):
     
 def calc_stress(eps,dNdX):
     stress = np.zeros((m_gp_count,m_dim, m_dim))
-    # strain = np.zeros((m_gp_count,m_dim, m_dim))
-    # eps[gp] +=  str_rate * dt
-  # # PLAIN STRESS
-    c = E / (1.0- nu*nu)
-  
-  # #!!!! PLAIN STRAIN
-  # #c = dom%mat_E / ((1.0+dom%mat_nu)*(1.0-2.0*dom%mat_nu))
+    #c = E / (1.0- nu*nu)
+    c = E / ((1.0+nu)*(1.0-2.0*nu)) # #!!!! PLAIN STRAIN
     for gp in range(len(gauss_points)):
         stress[gp,0,0] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
-        stress[gp,1,1] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
+        stress[gp,1,1] = c * ((1.0-nu)*eps[gp,1,1] + nu*eps[gp,0,0])
         stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
     return stress
 
@@ -173,7 +144,7 @@ print ("Jacobian\n", J[0])
 print ("det J \n", detJ[0])
 vol_0 = calc_vol(detJ)
 nod_mass = vol_0 * rho / m_nodxelem 
-
+print ("nodmass\n",nod_mass)
 # accel ()= forces/mass
 
 rho_b = 0.8182  # DEFAULT SPECTRAL RADIUS
@@ -193,6 +164,7 @@ for step in range(1):
     impose_bcv(v)
 
     J, detJ, dNdX = calc_jacobian(x)
+    print ("Deriv\n",dNdX[0])
     # vol_0 = calc_vol(detJ)
     # nod_mass = vol_0 * rho / m_nodxelem 
 
@@ -200,6 +172,7 @@ for step in range(1):
     print ("strain rate\n",str_rate)
     # strain =  strain + calc_strain(str_rate,dt)
     strain =  calc_strain(str_rate,dt)
+    print ("strain \n",strain)
     stress =  calc_stress(strain,dt)
     print ("stress\n",stress)
     forces =  calc_forces(stress,dNdX,J)

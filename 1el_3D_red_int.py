@@ -87,12 +87,12 @@ def material_matrix():
     return C
 
 def calculate_strain(str_rate,dt):
-    strain = np.zeros((m_gp_count,m_dim, m_dim))
+    strain = np.zeros((m_dim, m_dim))
     strain = dt * str_rate
     return strain
     
 def calculate_stress(eps,dNdX):
-    stress = np.zeros((m_gp_count,m_dim, m_dim))
+    stress = np.zeros((m_dim, m_dim))
     # strain = np.zeros((m_gp_count,m_dim, m_dim))
     # eps[gp] +=  str_rate * dt
   # # PLAIN STRESS
@@ -100,7 +100,7 @@ def calculate_stress(eps,dNdX):
   
   # #!!!! PLAIN STRAIN
   # #c = dom%mat_E / ((1.0+dom%mat_nu)*(1.0-2.0*dom%mat_nu))
-
+    eps[0,0] = 1
     stress[0,0] = c * ((1.0-nu)*eps[0,0] + nu*eps[1,1])
     stress[1,1] = c * ((1.0-nu)*eps[0,0] + nu*eps[1,1])
     stress[0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[0,1] 
@@ -123,6 +123,9 @@ dt = 8.0e-5
 str_rate = calc_str_rate (dNdX,velocities)
 
 strain =  calculate_strain(str_rate,dt)
+print("strain")
+print (strain)
+
 stress =  calculate_stress(strain,dt)
 
 print (strain)
