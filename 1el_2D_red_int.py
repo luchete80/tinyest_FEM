@@ -7,8 +7,9 @@ m_dim = 2
 m_nodxelem = 4
 # Define element properties
 
+red_int = False
 element_length = 1.0   # Length of the element
-m_gp_count = 1
+
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)
@@ -26,8 +27,19 @@ u      = np.zeros((m_nodxelem,2))
 u_tot  = np.zeros((m_nodxelem,2))
 prev_a = np.zeros((m_nodxelem,2)) 
 
-gauss_points = np.array([[0.0, 0.0]])
-gauss_weights = np.array([4.0])
+if red_int:
+  gauss_points = np.array([[0.0, 0.0]])
+  gauss_weights = np.array([4.0])
+  m_gp_count = 1
+else :
+  gauss_points = np.array([[-0.577350269, -0.577350269],
+                         [ 0.577350269, -0.577350269],
+                         [ 0.577350269,  0.577350269],
+                         [-0.577350269,  0.577350269]])
+
+  gauss_weights = np.array([1, 1, 1, 1])
+  m_gp_count = 4
+  
 detJ = np.zeros((m_gp_count))
 dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
@@ -160,7 +172,7 @@ gamma = 1.5 - alpha;
 
 print ("V", a)
 ################################# MAIN LOOP ###################################
-for step in range(1):
+for step in range(1000):
     # !!! PREDICTION PHASE
     u = dt * (v + (0.5 - beta) * dt * prev_a)
     # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
@@ -176,12 +188,12 @@ for step in range(1):
     str_rate = calc_str_rate (dNdX,v)
     print ("strain rate\n",str_rate)
     # strain =  strain + calc_strain(str_rate,dt)
-    strain =  calc_strain(str_rate,dt)
+    strain =  strain + calc_strain(str_rate,dt)
     print ("strain \n",strain)
     stress =  calc_stress(strain,dt)
     print ("stress\n",stress)
     forces =  calc_forces(stress,dNdX,J)
-
+    a = -forces/nod_mass
     a = a - alpha * prev_a
     a = a / (1.0 - alpha)
     v = v + gamma * dt * a  
@@ -195,9 +207,15 @@ for step in range(1):
     # !call AverageData(elem%rho(:,1),nod%rho(:))  
     prev_a = a
     # time = time + dt
-  
-print ("DISPLACEMENTS\n",u)
+
+    u_tot += u 
+str_rate = calc_str_rate (dNdX,v)
+    
+print ("DISPLACEMENTS\n",u_tot)
 print (strain)
 print("STRESS")
 print (stress)
 print("strain rate:\n" ,str_rate[0])
+
+
+    
