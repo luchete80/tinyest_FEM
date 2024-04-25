@@ -34,9 +34,13 @@ dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem))
 
 strain = np.zeros((m_gp_count,m_dim, m_dim))
 
-def impose_bcv(vel):
-  vel[2,1] = vel[2,1] = -1.0
-  vel[0,:] = vel[1,0] = 0.0
+def impose_bc(vel, accel):
+  vel[2,1] = vel[3,1] = -1.0
+  vel[0,:] = vel[1,1] = 0.0
+
+  accel[2,1] = accel[3,1] = 0.0
+  accel[0,:] = accel[1,1] = 0.0
+
   
 # Define shape functions and their derivatives for 2D quadrilateral element
           # !!!!! J-1 = dr/dx
@@ -68,7 +72,6 @@ def calc_jacobian(pos):
     detJ = np.zeros((gp_count))
     for gp in range(len(gauss_points)):
         xi, eta = gauss_points[gp]
-        weight = gauss_weights[gp]
         N, dNdrs[gp] = shape_functions(xi, eta)
         J[gp] = np.dot(dNdrs[gp], pos)
         detJ[gp] = np.linalg.det(J[gp])
@@ -76,6 +79,8 @@ def calc_jacobian(pos):
         invJ = np.linalg.inv(J[gp])
         print ("invJ", invJ)
         dNdX[gp] = np.dot(invJ,dNdrs[gp])
+        print ("test", -invJ[0,0]-invJ[0,1])
+        print ("deriv",dNdX[gp] )
     return J, detJ, dNdX
 
 def calc_vol(detJ):
@@ -161,7 +166,7 @@ for step in range(1):
     # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
     v = v + (1.0-gamma)* dt * prev_a
     a[:,:] = 0.0
-    impose_bcv(v)
+    impose_bc(v, a)
 
     J, detJ, dNdX = calc_jacobian(x)
     print ("Deriv\n",dNdX[0])
@@ -181,7 +186,7 @@ for step in range(1):
     a = a / (1.0 - alpha)
     v = v + gamma * dt * a  
 
-    impose_bcv (v) #REINFORCE VELOCITY BC
+    impose_bc (v, a) #REINFORCE VELOCITY BC
 
     u = u + beta * dt * dt * a   
     # nod%u = nod%u + u
