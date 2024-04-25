@@ -88,12 +88,12 @@ def calc_jacobian(pos):
         N, dNdrs[gp] = shape_functions(xi, eta)
         J[gp] = np.dot(dNdrs[gp], pos)
         detJ[gp] = np.linalg.det(J[gp])
-        print("det J\n", detJ)
+        # print("det J\n", detJ)
         invJ = np.linalg.inv(J[gp])
-        print ("invJ", invJ)
+        # print ("invJ", invJ)
         dNdX[gp] = np.dot(invJ,dNdrs[gp])
-        print ("test", -invJ[0,0]-invJ[0,1])
-        print ("deriv",dNdX[gp] )
+        # print ("test", -invJ[0,0]-invJ[0,1])
+        # print ("deriv",dNdX[gp] )
     return J, detJ, dNdX
 
 def calc_vol(detJ):
@@ -117,10 +117,10 @@ def calc_str_rate (dNdX,v):
     str_rate = np.zeros((m_gp_count,m_dim, m_dim))
     for gp in range (m_gp_count):
         grad_v = velocity_gradient_tensor(dNdX, v)
-        print("Velocity gradients\n" ,grad_v[0])
+        # print("Velocity gradients\n" ,grad_v[0])
 
         str_rate[gp] = 0.5*(grad_v[gp]+grad_v[gp].T)
-    print("strain rate:\n" ,str_rate)
+    # print("strain rate:\n" ,str_rate)
     return str_rate
 
 
@@ -151,8 +151,8 @@ def calc_forces(stress,dNdX,J):
             B[0, i] = dNdX[gp,0,i]
             B[1, i] = dNdX[gp,1,i]    
         forces +=  np.dot(B.T,stress[gp]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
-    print ("forces")
-    print (forces)
+    # print ("forces")
+    # print (forces)
     return forces
 
 
@@ -175,6 +175,7 @@ print ("V", a)
 ################################# MAIN LOOP ###################################
 t = 0.0
 while (t < tf):
+    print ("Time: ", t)
     # !!! PREDICTION PHASE
     u = dt * (v + (0.5 - beta) * dt * prev_a)
     # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
@@ -183,7 +184,7 @@ while (t < tf):
     impose_bc(v, a)
 
     J, detJ, dNdX = calc_jacobian(x)
-    print ("Deriv\n",dNdX[0])
+    # print ("Deriv\n",dNdX[0])
     # vol_0 = calc_vol(detJ)
     # nod_mass = vol_0 * rho / m_nodxelem 
 
