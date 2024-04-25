@@ -27,7 +27,7 @@ u_tot  = np.zeros((m_nodxelem,2))
 prev_a = np.zeros((m_nodxelem,2)) 
 
 gauss_points = np.array([[0.0, 0.0]])
-gauss_weights = np.array([1.0])
+gauss_weights = np.array([4.0])
 detJ = np.zeros((m_gp_count))
 dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
@@ -39,6 +39,15 @@ def impose_bcv(vel):
   vel[0,:] = vel[1,0] = 0.0
   
 # Define shape functions and their derivatives for 2D quadrilateral element
+          # !!!!! J-1 = dr/dx
+          # !!!! dHxy = J-1 x dHrs = [ ] x 0.25[-1 1 -1 1]
+          # !!!!                               [-1 -1 1 1]
+          # elem%dHxy_detJ(e,gp,:,1) = -invJ(:,1)-invJ(:,2) !For each 3 rows of inv J and dHdxy
+          # elem%dHxy_detJ(e,gp,:,2) =  invJ(:,1)-invJ(:,2)
+          # elem%dHxy_detJ(e,gp,:,3) =  invJ(:,1)+invJ(:,2)
+          # elem%dHxy_detJ(e,gp,:,4) = -invJ(:,1)+invJ(:,2)     
+          
+          # elem%dHxy_detJ(e,gp,:,:) = elem%dHxy_detJ(e,gp,:,:) * 0.25d0
 def shape_functions(xi, eta):
     dNdX_ = np.zeros((m_dim, m_nodxelem))
     N = np.array([(1-xi)*(1-eta)/4,
@@ -48,7 +57,7 @@ def shape_functions(xi, eta):
     dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
     dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
     return N, dNdX_
-    print(dNdX)
+    # print(dNdX)
 
 
 gp_count = len(gauss_points)
