@@ -145,6 +145,7 @@ def calc_stress2(str_rate, rot_rate, tau,dt):
       srt = np.dot(tau[gp],np.transpose(rot_rate))
       rs  = np.dot(rot_rate[gp],np.transpose(tau))
       tr = numpy.trace(str_rate[gp])
+      tau = tau + dt * (2.0 * mat_G * (str_rate-1/3*(tr*np.identity)+rs+tr)
       # SRT = MatMul(elem%shear_stress(e,gp,:,:),transpose(elem%rot_rate(e,gp,:,:)))
       # RS  = MatMul(elem%rot_rate(e,gp,:,:), elem%shear_stress(e,gp,:,:))
       # trace = trace + elem%str_rate(e,gp,i,i)
@@ -154,7 +155,7 @@ def calc_stress2(str_rate, rot_rate, tau,dt):
                                    # +SRT+RS) + elem%shear_stress(e,gp,:,:)
       #J2
       # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
-    
+      #stress = -p
     return stress
 
 #We can calc with B matrix
