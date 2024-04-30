@@ -138,6 +138,24 @@ def calc_stress(eps,dNdX):
         stress[gp,1,1] = c * ((1.0-nu)*eps[gp,1,1] + nu*eps[gp,0,0])
         stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
     return stress
+    
+def calc_stress2(str_rate, rot_rate, tau,dt):
+    stress = np.zeros((m_gp_count,m_dim, m_dim))
+    for gp in range(len(gauss_points)):
+      srt = np.dot(tau[gp],np.transpose(rot_rate))
+      rs  = np.dot(rot_rate[gp],np.transpose(tau))
+      tr = numpy.trace(str_rate[gp])
+      # SRT = MatMul(elem%shear_stress(e,gp,:,:),transpose(elem%rot_rate(e,gp,:,:)))
+      # RS  = MatMul(elem%rot_rate(e,gp,:,:), elem%shear_stress(e,gp,:,:))
+      # trace = trace + elem%str_rate(e,gp,i,i)
+
+      # elem%shear_stress(e,gp,:,:)	= dt * (2.0 * mat_G *(elem%str_rate(e,gp,:,:) - 1.0/3.0 * &
+                                   # (elem%str_rate(e,gp,1,1)+elem%str_rate(e,gp,2,2)+elem%str_rate(e,gp,3,3))*ident) &
+                                   # +SRT+RS) + elem%shear_stress(e,gp,:,:)
+      #J2
+      # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
+    
+    return stress
 
 #We can calc with B matrix
 #F = BT x sigma = [dh1/dx dh1/dy ] x [ sxx sxy]
@@ -194,6 +212,7 @@ while (t < tf):
     strain =  strain + calc_strain(str_rate,dt)
     # print ("strain \n",strain)
     stress =  calc_stress(strain,dt)
+    #stress =  calc_stress2(str_rate,str_rate,str_rate,dt)
     # print ("stress\n",stress)
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
