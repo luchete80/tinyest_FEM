@@ -163,24 +163,16 @@ def calc_pressure(K_,dstr,stress):
   
 def calc_stress2(str_rate, rot_rate, tau, p, dt):
 
-    for gp in range(len(gauss_points)):
-      srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
-      rs  = np.dot(rot_rate[gp],tau[gp])
-      tr = np.trace(str_rate[gp])
-      tau[gp] +=  dt * (2.0 * mat_G * (str_rate[gp]-1/3*(tr*np.identity(3))+rs+srt))
-      # SRT = MatMul(elem%shear_stress(e,gp,:,:),transpose(elem%rot_rate(e,gp,:,:)))
-      # RS  = MatMul(elem%rot_rate(e,gp,:,:), elem%shear_stress(e,gp,:,:))
-      # trace = trace + elem%str_rate(e,gp,i,i)
+  for gp in range(len(gauss_points)):
+    srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
+    rs  = np.dot(rot_rate[gp],tau[gp])
+    tr = np.trace(str_rate[gp])
+    tau[gp] +=  dt * (2.0 * mat_G * (str_rate[gp]-1.0/3.0*(tr*np.identity(3))+rs+srt))
 
-      # elem%shear_stress(e,gp,:,:)	= dt * (2.0 * mat_G *(elem%str_rate(e,gp,:,:) - 1.0/3.0 * &
-                                   # (elem%str_rate(e,gp,1,1)+elem%str_rate(e,gp,2,2)+elem%str_rate(e,gp,3,3))*ident) &
-                                   # +SRT+RS) + elem%shear_stress(e,gp,:,:)
-      #J2
-      stress[gp] = -p[gp] * np.identity(3) + tau[gp]
-      print ("stress gp ", stress[gp])
-      # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
-      #stress = -p
-    return stress
+    stress[gp] = -p[gp] * np.identity(3) + tau[gp]
+    print ("stress gp ", stress[gp])
+
+  return stress
 
 #We can calc with B matrix
 #F = BT x sigma = [dh1/dx dh1/dy ] x [ sxx sxy]
