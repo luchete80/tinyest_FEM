@@ -6,6 +6,7 @@ rho = 7850.0
 m_dim = 2
 m_nodxelem = 4
 mat_G = E/(2.0*(1+nu))
+K_mod = E / ( 3.0*(1.0 -2.0*nu) );
 # Define element properties
 
 
@@ -18,8 +19,8 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.1e-5
-# tf = dt
-tf = 1.0e-3    
+tf = dt
+# tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -30,6 +31,7 @@ u      = np.zeros((m_nodxelem,2))
 u_tot  = np.zeros((m_nodxelem,2))
 prev_a = np.zeros((m_nodxelem,2)) 
 
+    
 if red_int:
   gauss_points = np.array([[0.0, 0.0]])
   gauss_weights = np.array([4.0])
@@ -50,6 +52,8 @@ dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem))
 rot_rate = np.zeros((m_gp_count,3, 3))
 strain = np.zeros((m_gp_count,3, 3))
 tau = np.zeros((m_gp_count,3, 3))
+pres = np.zeros(m_gp_count)
+stress = np.zeros((m_gp_count,3, 3))
 
 def impose_bc(vel, accel):
   vel[2,1] = vel[3,1] = -1.0
@@ -134,23 +138,33 @@ def calc_strain(str_rate,dt):
     strain = dt * str_rate
     return strain
     
-def calc_stress(eps,dNdX):
-    stress = np.zeros((m_gp_count,m_dim, m_dim))
-    #c = E / (1.0- nu*nu)
-    c = E / ((1.0+nu)*(1.0-2.0*nu)) # #!!!! PLAIN STRAIN
-    for gp in range(len(gauss_points)):
-        stress[gp,0,0] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
-        stress[gp,1,1] = c * ((1.0-nu)*eps[gp,1,1] + nu*eps[gp,0,0])
-        stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
-    return stress
+# def calc_stress(eps,dNdX):
+    # stress = np.zeros((m_gp_count,m_dim, m_dim))
+    # #c = E / (1.0- nu*nu)
+    # c = E / ((1.0+nu)*(1.0-2.0*nu)) # #!!!! PLAIN STRAIN
+    # for gp in range(len(gauss_points)):
+        # stress[gp,0,0] = c * ((1.0-nu)*eps[gp,0,0] + nu*eps[gp,1,1])
+        # stress[gp,1,1] = c * ((1.0-nu)*eps[gp,1,1] + nu*eps[gp,0,0])
+        # stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
+    # return stress
     
+def calc_pressure(K_,dstr,stress):
+  pr = np.zeros(m_gp_count)
+  pi_= 0.0
+  for gp in range(len(gauss_points)):
+    pi_= pi_ + np.trace(dstr[gp])
+  pi_ /= float(len(gauss_points))
+  for gp in range(len(gauss_points)):
+    pr[gp] = -1.0/3.0 *  np.trace(stress[gp]) + K_ * pi_
+  return pr
+  
 def calc_stress2(str_rate, rot_rate, tau, p, dt):
-    stress = np.zeros((m_gp_count,m_dim, m_dim))
+
     for gp in range(len(gauss_points)):
       srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
-      rs  = np.dot(rot_rate[gp],np.transpose(tau[gp]))
+      rs  = np.dot(rot_rate[gp],tau[gp])
       tr = np.trace(str_rate[gp])
-      tau = tau + dt * (2.0 * mat_G * (str_rate[gp]-1/3*(tr*np.identity(3))+rs+tr))
+      tau[gp] +=  dt * (2.0 * mat_G * (str_rate[gp]-1/3*(tr*np.identity(3))+rs+srt))
       # SRT = MatMul(elem%shear_stress(e,gp,:,:),transpose(elem%rot_rate(e,gp,:,:)))
       # RS  = MatMul(elem%rot_rate(e,gp,:,:), elem%shear_stress(e,gp,:,:))
       # trace = trace + elem%str_rate(e,gp,i,i)
@@ -159,7 +173,7 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
                                    # (elem%str_rate(e,gp,1,1)+elem%str_rate(e,gp,2,2)+elem%str_rate(e,gp,3,3))*ident) &
                                    # +SRT+RS) + elem%shear_stress(e,gp,:,:)
       #J2
-      stress[gp] = 
+      stress[gp] = -p[gp] * np.identity(3) + tau[gp]
       # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
       #stress = -p
     return stress
@@ -175,7 +189,7 @@ def calc_forces(stress,dNdX,J):
         for i in range(m_nodxelem):
             B[0, i] = dNdX[gp,0,i]
             B[1, i] = dNdX[gp,1,i]    
-        forces +=  np.dot(B.T,stress[gp]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
+        forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
     # print ("forces")
     # print (forces)
     return forces
@@ -209,19 +223,20 @@ while (t < tf):
     impose_bc(v, a)
 
     J, detJ, dNdX = calc_jacobian(x)
-    # print ("Deriv\n",dNdX[0])
-    # vol_0 = calc_vol(detJ)
-    # nod_mass = vol_0 * rho / m_nodxelem 
 
     str_rate,rot_rate = calc_str_rate (dNdX,v)
-    # print ("strain rate\n",str_rate)
-    # strain =  strain + calc_strain(str_rate,dt)
-    strain =  strain + calc_strain(str_rate,dt)
-    # print ("strain \n",strain)
-    stress =  calc_stress(strain,dt)
-    stress2 =  calc_stress2(str_rate,rot_rate,tau,dt)
-    print ("stress \n",stress)
-    print ("stress2\n",stress2)
+  
+    str_inc = calc_strain(str_rate,dt)
+    print ("str_inc", str_inc)
+    pres = calc_pressure(K_mod,str_inc, stress)
+    strain =  strain + str_inc
+
+    # stress =  calc_stress(strain,dt)
+    # print ("pres", pres)
+
+    stress =  calc_stress2(str_rate,rot_rate,tau,pres,dt)
+    # print ("stress \n",stress)
+
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
     
@@ -246,7 +261,9 @@ str_rate = calc_str_rate (dNdX,v)
 print ("DISPLACEMENTS\n",u_tot)
 # print (strain)
 # print("STRESS")
-# print (stress)
+print ("pressure", pres)
+print ("stress",  stress)
+print ("Forces", forces)
 print("strain rate:\n" ,str_rate[0])
 
 
