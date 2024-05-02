@@ -5,7 +5,9 @@ nu  = 0.3   # Poisson's ratio
 rho = 7850.0
 m_dim = 2
 m_nodxelem = 4
+mat_G = E/(2.0*(1+nu))
 # Define element properties
+
 
 red_int = False
 element_length = 1.0   # Length of the element
@@ -45,7 +47,9 @@ detJ = np.zeros((m_gp_count))
 dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 
-strain = np.zeros((m_gp_count,m_dim, m_dim))
+rot_rate = np.zeros((m_gp_count,3, 3))
+strain = np.zeros((m_gp_count,3, 3))
+tau = np.zeros((m_gp_count,3, 3))
 
 def impose_bc(vel, accel):
   vel[2,1] = vel[3,1] = -1.0
@@ -114,18 +118,19 @@ def velocity_gradient_tensor(dNdX, vel):
     return grad_v
 
 def calc_str_rate (dNdX,v):
-    str_rate = np.zeros((m_gp_count,m_dim, m_dim))
+    str_rate = np.zeros((m_gp_count,3,3))
     for gp in range (m_gp_count):
         grad_v = velocity_gradient_tensor(dNdX, v)
         # print("Velocity gradients\n" ,grad_v[0])
 
-        str_rate[gp] = 0.5*(grad_v[gp]+grad_v[gp].T)
+        str_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]+grad_v[gp].T)
+        rot_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]-grad_v[gp].T)
     # print("strain rate:\n" ,str_rate)
-    return str_rate
+    return str_rate, rot_rate
 
 
 def calc_strain(str_rate,dt):
-    strain = np.zeros((m_gp_count,m_dim, m_dim))
+    strain = np.zeros((m_gp_count,3, 3))
     strain = dt * str_rate
     return strain
     
@@ -138,21 +143,14 @@ def calc_stress(eps,dNdX):
         stress[gp,1,1] = c * ((1.0-nu)*eps[gp,1,1] + nu*eps[gp,0,0])
         stress[gp,0,1] = stress[gp,1,0] = c * (1.0-2*nu)*eps[gp,0,1] 
     return stress
-
-#AXISYMM
-        # c = E / ((1.0 + nu) * (1.0 - 2.0 * nu))  # Axisymmetric material properties
-        # stress[gp, 0, 0] = c * ((1.0 - nu) * strain[gp, 0, 0] + nu * strain[gp, 1, 1])
-        # stress[gp, 1, 1] = c * ((1.0 - nu) * strain[gp, 1, 1] + nu * strain[gp, 0, 0])
-        # stress[gp, 0, 1] = stress[gp, 1, 0] = c * (1.0 - 2 * nu) * strain[gp, 0, 1]
-
     
-def calc_stress2(str_rate, rot_rate, tau,dt):
+def calc_stress2(str_rate, rot_rate, tau, p, dt):
     stress = np.zeros((m_gp_count,m_dim, m_dim))
     for gp in range(len(gauss_points)):
-      srt = np.dot(tau[gp],np.transpose(rot_rate))
-      rs  = np.dot(rot_rate[gp],np.transpose(tau))
-      tr = numpy.trace(str_rate[gp])
-      tau = tau + dt * (2.0 * mat_G * (str_rate-1/3*(tr*np.identity)+rs+tr))
+      srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
+      rs  = np.dot(rot_rate[gp],np.transpose(tau[gp]))
+      tr = np.trace(str_rate[gp])
+      tau = tau + dt * (2.0 * mat_G * (str_rate[gp]-1/3*(tr*np.identity(3))+rs+tr))
       # SRT = MatMul(elem%shear_stress(e,gp,:,:),transpose(elem%rot_rate(e,gp,:,:)))
       # RS  = MatMul(elem%rot_rate(e,gp,:,:), elem%shear_stress(e,gp,:,:))
       # trace = trace + elem%str_rate(e,gp,i,i)
@@ -161,6 +159,7 @@ def calc_stress2(str_rate, rot_rate, tau,dt):
                                    # (elem%str_rate(e,gp,1,1)+elem%str_rate(e,gp,2,2)+elem%str_rate(e,gp,3,3))*ident) &
                                    # +SRT+RS) + elem%shear_stress(e,gp,:,:)
       #J2
+      stress[gp] = 
       # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
       #stress = -p
     return stress
@@ -214,14 +213,15 @@ while (t < tf):
     # vol_0 = calc_vol(detJ)
     # nod_mass = vol_0 * rho / m_nodxelem 
 
-    str_rate = calc_str_rate (dNdX,v)
+    str_rate,rot_rate = calc_str_rate (dNdX,v)
     # print ("strain rate\n",str_rate)
     # strain =  strain + calc_strain(str_rate,dt)
     strain =  strain + calc_strain(str_rate,dt)
     # print ("strain \n",strain)
     stress =  calc_stress(strain,dt)
-    #stress =  calc_stress2(str_rate,str_rate,str_rate,dt)
-    # print ("stress\n",stress)
+    stress2 =  calc_stress2(str_rate,rot_rate,tau,dt)
+    print ("stress \n",stress)
+    print ("stress2\n",stress2)
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
     
@@ -247,7 +247,7 @@ print ("DISPLACEMENTS\n",u_tot)
 # print (strain)
 # print("STRESS")
 # print (stress)
-# print("strain rate:\n" ,str_rate[0])
+print("strain rate:\n" ,str_rate[0])
 
 
     
