@@ -1,3 +1,5 @@
+### DECOMPOSED SIGMA
+
 import numpy as np
 # Define material properties
 E   = 206e9  # Young's modulus in Pa
@@ -10,7 +12,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) );
 # Define element properties
 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -18,7 +20,7 @@ axi_symm = False #FALSE: PLAIN STRAIN
 vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
-dt = 0.1e-5
+dt = 0.8e-5
 tf = dt
 # tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
@@ -123,6 +125,7 @@ def velocity_gradient_tensor(dNdX, vel):
 
 def calc_str_rate (dNdX,v):
     str_rate = np.zeros((m_gp_count,3,3))
+    ss= np.zeros((m_gp_count,3,3))
     for gp in range (m_gp_count):
         grad_v = velocity_gradient_tensor(dNdX, v)
         # print("Velocity gradients\n" ,grad_v[0])
@@ -174,6 +177,7 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
                                    # +SRT+RS) + elem%shear_stress(e,gp,:,:)
       #J2
       stress[gp] = -p[gp] * np.identity(3) + tau[gp]
+      print ("stress gp ", stress[gp])
       # elem%sigma(e,gp,:,:) = -elem%pressure(e,gp) * ident + elem%shear_stress(e,gp,:,:)	!Fraser, eq 3.32      
       #stress = -p
     return stress
