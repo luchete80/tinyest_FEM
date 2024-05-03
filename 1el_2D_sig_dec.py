@@ -23,8 +23,8 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-#tf = dt
-tf = 1.0e-3    
+tf = dt
+# tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -175,10 +175,7 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
     rs  = np.dot(rot_rate[gp],tau[gp])
     
     tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])+rs+srt))
-    print("p gp", p[gp]*np.identity(3))
-    print ("tau", tau[gp])
-    stress[gp] =  tau[gp]-(p[gp] * np.identity(3))
-    print ("stress gp ", stress[gp])
+    stress[gp] =  tau[gp] - p[gp] * np.identity(3)
 
   return stress
 
@@ -262,14 +259,15 @@ while (t < tf):
     t+= dt
 str_rate = calc_str_rate (dNdX,v)
     
-print ("DISPLACEMENTS\n",u_tot)
+
 # print (strain)
 # print("STRESS")
+print ("veloc ", v)
+print ("accel ", a)
 print ("pressure", pres)
 print ("stress",  stress)
 print ("tau",  tau)
 print ("Forces", forces)
 print("strain rate:\n" ,str_rate[0])
 
-
-    
+print ("DISPLACEMENTS\n",u_tot)
