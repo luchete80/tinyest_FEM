@@ -160,14 +160,19 @@ def calc_pressure(K_,dstr,stress):
   for gp in range(len(gauss_points)):
     pr[gp] = -1.0/3.0 *  np.trace(stress[gp]) + K_ * pi_
   return pr
-  
+
+def dev(t):
+  d = np.zeros((3,3))
+  d = t-1.0/3.0*(np.trace(t)*np.identity(3) )
+  return d
+
 def calc_stress2(str_rate, rot_rate, tau, p, dt):
 
   for gp in range(len(gauss_points)):
     srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
     rs  = np.dot(rot_rate[gp],tau[gp])
-    tr = np.trace(str_rate[gp])
-    tau[gp] +=  dt * (2.0 * mat_G * (str_rate[gp]-1.0/3.0*(tr*np.identity(3))+rs+srt))
+    
+    tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])+rs+srt))
 
     stress[gp] = -p[gp] * np.identity(3) + tau[gp]
     print ("stress gp ", stress[gp])
@@ -178,17 +183,17 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
 #F = BT x sigma = [dh1/dx dh1/dy ] x [ sxx sxy]
 #               = [dh2/dx dh2/dy ]   [ syx syy]
 def calc_forces(stress,dNdX,J):
-    forces = np.zeros((m_nodxelem,m_dim))
-    B = np.zeros((m_dim, m_nodxelem))
-    
-    for gp in range(len(gauss_points)):
-        for i in range(m_nodxelem):
-            B[0, i] = dNdX[gp,0,i]
-            B[1, i] = dNdX[gp,1,i]    
-        forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
-    # print ("forces")
-    # print (forces)
-    return forces
+  forces = np.zeros((m_nodxelem,m_dim))
+  B = np.zeros((m_dim, m_nodxelem))
+  
+  for gp in range(len(gauss_points)):
+    for i in range(m_nodxelem):
+      B[0, i] = dNdX[gp,0,i]
+      B[1, i] = dNdX[gp,1,i]    
+    forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
+  # print ("forces")
+  # print (forces)
+  return forces
 
 
 #strain_rate = calc_strain_rate(v)
@@ -221,7 +226,7 @@ while (t < tf):
     J, detJ, dNdX = calc_jacobian(x)
 
     str_rate,rot_rate = calc_str_rate (dNdX,v)
-  
+    print ("rot_rate", rot_rate)  
     str_inc = calc_strain(str_rate,dt)
     print ("str_inc", str_inc)
     pres = calc_pressure(K_mod,str_inc, stress)
