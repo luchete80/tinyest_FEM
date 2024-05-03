@@ -7,8 +7,10 @@ nu  = 0.3   # Poisson's ratio
 rho = 7850.0
 m_dim = 2
 m_nodxelem = 4
+
 mat_G = E/(2.0*(1+nu))
-K_mod = E / ( 3.0*(1.0 -2.0*nu) );
+print("mat G", mat_G)
+K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 # Define element properties
 
 
@@ -163,7 +165,7 @@ def calc_pressure(K_,dstr,stress):
 
 def dev(t):
   d = np.zeros((3,3))
-  d = t-1.0/3.0*(np.trace(t)*np.identity(3) )
+  d = t-1.0/3.0*np.trace(t)*np.identity(3) 
   return d
 
 def calc_stress2(str_rate, rot_rate, tau, p, dt):
@@ -173,7 +175,7 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
     rs  = np.dot(rot_rate[gp],tau[gp])
     
     tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])+rs+srt))
-
+    print("p gp", p[gp])
     stress[gp] = -p[gp] * np.identity(3) + tau[gp]
     print ("stress gp ", stress[gp])
 
@@ -236,7 +238,7 @@ while (t < tf):
     # print ("pres", pres)
 
     stress =  calc_stress2(str_rate,rot_rate,tau,pres,dt)
-    # print ("stress \n",stress)
+    print ("tau \n",tau)
 
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
