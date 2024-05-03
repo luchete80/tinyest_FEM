@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 # Define element properties
 
 
-red_int = True
+red_int = False
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -23,8 +23,8 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-tf = dt
-# tf = 1.0e-3    
+#tf = dt
+tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -158,7 +158,7 @@ def calc_pressure(K_,dstr,stress):
   pi_= 0.0
   for gp in range(len(gauss_points)):
     pi_= pi_ + np.trace(dstr[gp])
-  pi_ /= float(len(gauss_points))
+  pi_ = -pi_/float(len(gauss_points))
   for gp in range(len(gauss_points)):
     pr[gp] = -1.0/3.0 *  np.trace(stress[gp]) + K_ * pi_
   return pr
@@ -175,8 +175,9 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
     rs  = np.dot(rot_rate[gp],tau[gp])
     
     tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])+rs+srt))
-    print("p gp", p[gp])
-    stress[gp] = -p[gp] * np.identity(3) + tau[gp]
+    print("p gp", p[gp]*np.identity(3))
+    print ("tau", tau[gp])
+    stress[gp] =  tau[gp]-(p[gp] * np.identity(3))
     print ("stress gp ", stress[gp])
 
   return stress
@@ -266,6 +267,7 @@ print ("DISPLACEMENTS\n",u_tot)
 # print("STRESS")
 print ("pressure", pres)
 print ("stress",  stress)
+print ("tau",  tau)
 print ("Forces", forces)
 print("strain rate:\n" ,str_rate[0])
 
