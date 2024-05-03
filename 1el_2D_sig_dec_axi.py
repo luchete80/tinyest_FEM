@@ -69,6 +69,8 @@ def impose_bc(vel, accel):
 
 def calc_radius (N):
   for gp in range(len(gauss_points)):
+    rv = np.dot(N,x)
+    print ("rv ", rv)
     radius[gp] = 1.0
   return r
   
