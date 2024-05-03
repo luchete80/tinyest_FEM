@@ -112,7 +112,7 @@ def calc_vol(detJ):
   vol = 0.0
   for gp in range(len(gauss_points)):
       vol += detJ[gp] * gauss_weights[gp]
-      print ("vol " + str(vol))
+      # print ("vol " + str(vol))
   return vol
 
 def velocity_gradient_tensor(dNdX, vel):
@@ -215,7 +215,7 @@ print ("V", a)
 ################################# MAIN LOOP ###################################
 t = 0.0
 while (t < tf):
-    print ("Time: ", t)
+    print ("---Time: ", t)
     # !!! PREDICTION PHASE
     u = dt * (v + (0.5 - beta) * dt * prev_a)
     # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
@@ -226,17 +226,14 @@ while (t < tf):
     J, detJ, dNdX = calc_jacobian(x)
 
     str_rate,rot_rate = calc_str_rate (dNdX,v)
-    print ("rot_rate", rot_rate)  
+
     str_inc = calc_strain(str_rate,dt)
-    print ("str_inc", str_inc)
+
     pres = calc_pressure(K_mod,str_inc, stress)
     strain =  strain + str_inc
 
-    # stress =  calc_stress(strain,dt)
-    # print ("pres", pres)
-
     stress =  calc_stress2(str_rate,rot_rate,tau,pres,dt)
-    print ("tau \n",tau)
+
 
     forces =  calc_forces(stress,dNdX,J)
     a = -forces/nod_mass
