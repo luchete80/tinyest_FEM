@@ -116,7 +116,7 @@ def calc_vol(detJ):
   return vol
 
 def velocity_gradient_tensor(dNdX, vel):
-    grad_v = np.zeros((m_gp_count,m_dim, m_dim))
+    grad_v = np.zeros((m_gp_count,3,3))
     for gp in range (m_gp_count):
         for I in range(m_dim): 
             for J in range(m_dim):
