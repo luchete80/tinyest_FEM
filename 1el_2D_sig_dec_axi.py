@@ -58,6 +58,7 @@ strain = np.zeros((m_gp_count,3, 3))
 tau = np.zeros((m_gp_count,3, 3))
 pres = np.zeros(m_gp_count)
 stress = np.zeros((m_gp_count,3, 3))
+radius = np.zeros(m_gp_count)
 
 def impose_bc(vel, accel):
   vel[2,1] = vel[3,1] = -1.0
@@ -66,6 +67,10 @@ def impose_bc(vel, accel):
   accel[2,1] = accel[3,1] = 0.0
   accel[0,:] = accel[1,1] = 0.0
 
+def calc_radius (N):
+  for gp in range(len(gauss_points)):
+    radius[gp] = 1.0
+  return r
   
 # Define shape functions and their derivatives for 2D quadrilateral element
           # !!!!! J-1 = dr/dx
@@ -116,7 +121,7 @@ def calc_vol(detJ):
   return vol
 
 def velocity_gradient_tensor(dNdX, vel):
-    grad_v = np.zeros((m_gp_count,dim,dim|))
+    grad_v = np.zeros((m_gp_count,m_dim,m_dim))
     for gp in range (m_gp_count):
         for I in range(m_dim): 
             for J in range(m_dim):
