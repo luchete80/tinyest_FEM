@@ -23,8 +23,8 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-tf = dt
-# tf = 1.0e-3    
+#tf = dt
+tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -173,8 +173,8 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
   for gp in range(len(gauss_points)):
     srt = np.dot(tau[gp],np.transpose(rot_rate[gp]))
     rs  = np.dot(rot_rate[gp],tau[gp])
-    
-    tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])+rs+srt))
+
+    tau[gp] +=  dt * (2.0 * mat_G * (dev(str_rate[gp])) + rs + srt )
     stress[gp] =  tau[gp] - p[gp] * np.identity(3)
 
   return stress
