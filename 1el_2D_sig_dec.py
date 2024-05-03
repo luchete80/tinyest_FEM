@@ -116,13 +116,14 @@ def calc_vol(detJ):
   return vol
 
 def velocity_gradient_tensor(dNdX, vel):
-    grad_v = np.zeros((m_gp_count,3,3))
+    grad_v = np.zeros((m_gp_count,dim,dim|))
     for gp in range (m_gp_count):
         for I in range(m_dim): 
             for J in range(m_dim):
                 for k in range(m_nodxelem): 
                     #grad_v[gp,I, J] += dNdX[gp, J, k] * vel[k * m_dim + I]
                     grad_v[gp,I, J] += dNdX[gp, J, k] * vel[k, I]
+
     return grad_v
 
 def calc_str_rate (dNdX,v):
@@ -134,7 +135,9 @@ def calc_str_rate (dNdX,v):
 
         str_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]+grad_v[gp].T)
         rot_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]-grad_v[gp].T)
-    # print("strain rate:\n" ,str_rate)
+        if (axi_symm):
+           str_rate [gp,2,2] = 0.25*grad_v[gp,0,0]/1.0
+# print("strain rate:\n" ,str_rate)
     return str_rate, rot_rate
 
 
@@ -142,6 +145,7 @@ def calc_strain(str_rate,dt):
     strain = np.zeros((m_gp_count,3, 3))
     strain = dt * str_rate
     return strain
+
     
 # def calc_stress(eps,dNdX):
     # stress = np.zeros((m_gp_count,m_dim, m_dim))
