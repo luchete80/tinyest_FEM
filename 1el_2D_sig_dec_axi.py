@@ -11,8 +11,7 @@ m_nodxelem = 4
 mat_G = E/(2.0*(1+nu))
 print("mat G", mat_G)
 K_mod = E / ( 3.0*(1.0 -2.0*nu) )
-# Define element properties
-
+# Define element 
 
 red_int = False
 element_length = 1.0   # Length of the element
@@ -212,7 +211,7 @@ def calc_forces(stress,dNdX,J):
     for gp in range(len(gauss_points)):
       fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp] 
       fax[:,1] += 0.25*stress[gp,0,1] * gauss_weights[gp] 
-  forces = (forces + fax)*2.0 * np.pi
+    forces = (forces + fax)*2.0 * np.pi
   # print ("forces")
   # print (forces)
   return forces
