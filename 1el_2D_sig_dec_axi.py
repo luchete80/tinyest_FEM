@@ -50,7 +50,8 @@ else :
   m_gp_count = 4
   
 detJ = np.zeros((m_gp_count))
-dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
+dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem))
+N    = np.zeros((m_gp_count, 1, m_nodxelem)) 
 dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 
 rot_rate = np.zeros((m_gp_count,3, 3))
@@ -69,10 +70,9 @@ def impose_bc(vel, accel):
 
 def calc_radius (N):
   for gp in range(len(gauss_points)):
-    rv = np.dot(N,x)
-    print ("rv ", rv)
-    radius[gp] = 1.0
-  return r
+    rv = np.dot(N[gp],x[:,0])
+    radius[gp] = rv
+  return radius
   
 # Define shape functions and their derivatives for 2D quadrilateral element
           # !!!!! J-1 = dr/dx
@@ -104,7 +104,7 @@ def calc_jacobian(pos):
     detJ = np.zeros((gp_count))
     for gp in range(len(gauss_points)):
         xi, eta = gauss_points[gp]
-        N, dNdrs[gp] = shape_functions(xi, eta)
+        N[gp], dNdrs[gp] = shape_functions(xi, eta)
         J[gp] = np.dot(dNdrs[gp], pos)
         detJ[gp] = np.linalg.det(J[gp])
         # print("det J\n", detJ)
@@ -142,8 +142,10 @@ def calc_str_rate (dNdX,v):
 
         str_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]+grad_v[gp].T)
         rot_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]-grad_v[gp].T)
+
         if (axi_symm):
-           str_rate [gp,2,2] = 0.25*grad_v[gp,0,0]/1.0
+          for k in range(m_nodxelem): 
+            str_rate [gp,2,2] += 0.25*v[k,0]/radius[gp]
 # print("strain rate:\n" ,str_rate)
     return str_rate, rot_rate
 
@@ -195,6 +197,8 @@ def calc_stress2(str_rate, rot_rate, tau, p, dt):
 #               = [dh2/dx dh2/dy ]   [ syx syy]
 def calc_forces(stress,dNdX,J):
   forces = np.zeros((m_nodxelem,m_dim))
+  fax = np.zeros((m_nodxelem,m_dim))
+  
   B = np.zeros((m_dim, m_nodxelem))
   
   for gp in range(len(gauss_points)):
@@ -202,6 +206,13 @@ def calc_forces(stress,dNdX,J):
       B[0, i] = dNdX[gp,0,i]
       B[1, i] = dNdX[gp,1,i]    
     forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
+    if (axi_symm):
+        forces *= radius[gp]
+  if (axi_symm):
+    for gp in range(len(gauss_points)):
+      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp] 
+      fax[:,1] += 0.25*stress[gp,0,1] * gauss_weights[gp] 
+  forces = (forces + fax)*2.0 * np.pi
   # print ("forces")
   # print (forces)
   return forces
@@ -235,7 +246,8 @@ while (t < tf):
     impose_bc(v, a)
 
     J, detJ, dNdX = calc_jacobian(x)
-
+    radius =calc_radius(N)
+    #print ("radius", radius)
     str_rate,rot_rate = calc_str_rate (dNdX,v)
 
     str_inc = calc_strain(str_rate,dt)
