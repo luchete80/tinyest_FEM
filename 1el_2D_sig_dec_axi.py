@@ -11,9 +11,10 @@ m_nodxelem = 4
 mat_G = E/(2.0*(1+nu))
 print("mat G", mat_G)
 K_mod = E / ( 3.0*(1.0 -2.0*nu) )
+mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -22,10 +23,10 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-tf = 10*dt
+#tf = 2.0*dt
 tf = 1.0e-3    
-#x      =  np.array([[0.1, 0.], [0.2, 0.], [0.2, 0.1], [0.1, 0.1]])
-x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0.0, 0.1]]) #SHOULD BE RADIAL FIX
+x      =  np.array([[0.1, 0.], [0.2, 0.], [0.2, 0.1], [0.1, 0.1]])
+#x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0.0, 0.1]]) #SHOULD BE RADIAL FIX
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
 ############################
@@ -222,7 +223,23 @@ def calc_forces(stress,dNdX,J):
   print (forces)
   return forces
 
-
+def calc_hg_forces(rho, vol,cs):
+  f_ = np.zeros((m_nodxelem,m_dim))
+  Sig = np.array([[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.]])
+  print ("Sig", Sig)
+  hmod = np.zeros((m_dim,4))
+  jmax = 4
+  for gp in range(len(gauss_points)):
+    for j in range(jmax):
+      for n in range(m_nodxelem):
+        hmod[:,j] +=v[n,:]*Sig[j,n]
+  for j in range(jmax):
+    for n in range(m_nodxelem):
+      f_[n,:] -=hmod[:,j]*Sig[j,n] 
+  ch = 0.06 * pow (vol,0.66666) * rho * 0.25 * cs
+  #print ("hg forces", f_)
+  f_ *= ch
+  return f_
 #strain_rate = calc_strain_rate(v)
 J, detJ, dNdX = calc_jacobian(x)
 print ("Jacobian\n", J[0])
@@ -232,10 +249,9 @@ nod_mass = vol_0 * rho / m_nodxelem
 radius =calc_radius(N)
 #only for this example case
 if (axi_symm):
-    radius =calc_radius(N)
     rr = 0.0
-    for i in range(m_gp_count):
-        rr+=radius[i]
+    for gp in range(m_gp_count):
+        rr+=radius[gp]
     rr/=m_gp_count
     print ("avg radius", rr)
     nod_mass *=rr*2.0 *np.pi
@@ -274,6 +290,8 @@ while (t < tf):
 
 
     forces =  calc_forces(stress,dNdX,J)
+    if red_int:
+      forces -= calc_hg_forces(rho,vol_0, mat_cs)
     a = -forces/nod_mass
     
     a = a - alpha * prev_a
