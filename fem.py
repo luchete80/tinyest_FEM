@@ -48,6 +48,7 @@ class Domain:
       
   def addBoxLength(self, ex, ey, ez):
     x = np.zeros((10,2))
+    nel = np.zeros(3)
     self.node_count = (ex+1)*(ey+1)*(ez+1)
     
     if (dim == 2):
@@ -55,18 +56,18 @@ class Domain:
       p = 1
     # !do while (Xp(3) <= (V(3)+Lz))
       # j = 1;         Xp(2) = V(2)
-      # do while (j <= (nel(2) +1))
-        # i = 1
+      while (j <= nel[1]):
+        i = 1
         # Xp(1) = V(1)
-        # do while (i <= (nel(1) +1))
+        while (i <= nel(1)):
           # nod%x(p,:) = Xp(:)
           # print *,"node ",p , "X: ",Xp(:)
           # p = p + 1
           # Xp(1) = Xp(1) + 2 * r
-          # i = i +1
+          i += 1
         # end do
         # Xp(2) = Xp(2) + 2 * r
-        # j = j +1
+        j += 1
       # end do 
       # Xp(3) = Xp(3) + 2 * r
     print (ex, ey, ez)
