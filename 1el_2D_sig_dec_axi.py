@@ -14,9 +14,9 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = True
+red_int = False
 element_length = 1.0   # Length of the element
-axi_symm = False #FALSE: PLAIN STRAIN 
+axi_symm = True #FALSE: PLAIN STRAIN 
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)
@@ -216,8 +216,8 @@ def calc_forces(stress,dNdX,J):
       print ("Ngp ", N[gp])
       #fax[:,0] += N[gp,:].T*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
       #fax[:,1] += N[gp]* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
-      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
-      fax[:,1] += 0.25* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
+      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * np.linalg.det(J[gp]) * gauss_weights[gp]  #SHAPE MAT
+      fax[:,1] += 0.25* stress[gp,0,1] * np.linalg.det(J[gp]) * gauss_weights[gp] #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
   print ("forces")
   print (forces)
