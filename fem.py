@@ -1,30 +1,13 @@
 import numpy as np
-# Define material properties
-E   = 206e9  # Young's modulus in Pa
-nu  = 0.3   # Poisson's ratio
-rho = 7850.0
-m_dim = 2
-m_nodxelem = 4
-# Define element properties
-
-red_int = False
-element_length = 1.0   # Length of the element
-  
-
-# Define nodal v (dummy data for demonstration)
-vel = np.full(m_dim * m_nodxelem, 0.1)
-vel[5] = vel[7] = -1.0
-
-dt = 0.1e-5
-# tf = dt
-tf = 1.0e-3    
-x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
-v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
-
+#  class Material:
+#    # Define material properties
+#    E   = 206e9  # Young's modulus in Pa
+#    nu  = 0.3   # Poisson's ratio
+#   rho = 7850.0
+      
 class Domain:
-  red_int = True
-  gauss_points = np.zeros((4,2)) 
-  dim = 2
+  #gauss_points = np.zeros((4,2))
+  #Booleans
 # ############################
 # # Gauss quadrature points and weights
 # a      = np.zeros((m_nodxelem,2)) 
@@ -32,22 +15,27 @@ class Domain:
 # u_tot  = np.zeros((m_nodxelem,2))
 # prev_a = np.zeros((m_nodxelem,2)) 
   def __init__(self):
+    self.m_dim = 2
+    self.m_nodxelem = 4
+    self.m_red_int = True
     print ("Domain!")
-    if red_int:
-      gauss_points = np.array([[0.0, 0.0]])
-      gauss_weights = np.array([4.0])
+    self.m_dim = 2
+    if m_red_int:
+      self.gauss_points = np.array([[0.0, 0.0]])
+      self.gauss_weights = np.array([4.0])
       m_gp_count = 1
     else :
-      gauss_points = np.array([[-0.577350269, -0.577350269],
+      self.gauss_points = np.array([[-0.577350269, -0.577350269],
                              [ 0.577350269, -0.577350269],
                              [ 0.577350269,  0.577350269],
                              [-0.577350269,  0.577350269]])
 
-      gauss_weights = np.array([1, 1, 1, 1])
+      self.gauss_weights = np.array([1, 1, 1, 1])
       m_gp_count = 4
-      
+  def allocateNodal(self,n):
+    x,a,v = np.zeros((n,self.m_dim))
+
   def addBoxLength(self, ex, ey, ez):
-    x = np.zeros((10,2))
     nel = np.zeros(3)
     self.node_count = (ex+1)*(ey+1)*(ez+1)
     
@@ -97,7 +85,7 @@ class Domain:
             # elem%dHxy_detJ(e,gp,:,4) = -invJ(:,1)+invJ(:,2)     
             
             # elem%dHxy_detJ(e,gp,:,:) = elem%dHxy_detJ(e,gp,:,:) * 0.25d0
-  def shape_functions(xi, eta):
+  def shape_functions(self,xi, eta):
       dNdX_ = np.zeros((m_dim, m_nodxelem))
       N = np.array([(1-xi)*(1-eta)/4,
                     (1+xi)*(1-eta)/4,
@@ -109,7 +97,7 @@ class Domain:
       # print(dNdX)
 
 
-  gp_count = len(gauss_points)
+  self.gp_count = len(self.gauss_points)
 
   # Finite element JACOBIAN AND DERIVATIVES CALC
   def calc_jacobian(pos):
