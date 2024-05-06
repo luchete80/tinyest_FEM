@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = True
+red_int = False
 element_length = 1.0   # Length of the element
 axi_symm = True #FALSE: PLAIN STRAIN 
 
@@ -146,7 +146,7 @@ def calc_str_rate (dNdX,v):
 
         if (axi_symm):
             str_rate [gp,2,2] = np.dot(N[gp],v[:,0])/radius[gp]
-# print("strain rate:\n" ,str_rate)
+    #print("strain rate:\n" ,str_rate)
     return str_rate, rot_rate
 
 
@@ -213,21 +213,20 @@ def calc_forces(stress,dNdX,J):
     for gp in range(len(gauss_points)):
       #RIGOUROUSLY SHOULD BE H[gp] * s(..)
       #is value taken to the nodes
-      print ("Ngp ", N[gp])
+      #print ("Ngp ", N[gp])
       #fax[:,0] += N[gp,:].T*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
       #fax[:,1] += N[gp]* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
       f = np.linalg.det(J[gp]) * gauss_weights[gp]
-      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * f  #SHAPE MAT
+      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * f  #0,25 is from pass to nod, SHAPE MAT
       fax[:,1] += 0.25* stress[gp,0,1] * f #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
-  print ("forces")
-  print (forces)
+  #print ("forces")
+  #print (forces)
   return forces
 
 def calc_hg_forces(rho, vol,cs):
   f_ = np.zeros((m_nodxelem,m_dim))
   Sig = np.array([[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.]])
-  print ("Sig", Sig)
   hmod = np.zeros((m_dim,4))
   jmax = 4
   for gp in range(len(gauss_points)):
