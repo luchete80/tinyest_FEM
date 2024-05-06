@@ -15,16 +15,17 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 
 red_int = False
 element_length = 1.0   # Length of the element
-axi_symm = True #FALSE: PLAIN STRAIN 
+axi_symm = False #FALSE: PLAIN STRAIN 
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-tf = dt
-#tf = 1.0e-3    
-x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
+tf = 10*dt
+tf = 1.0e-3    
+#x      =  np.array([[0.1, 0.], [0.2, 0.], [0.2, 0.1], [0.1, 0.1]])
+x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0.0, 0.1]]) #SHOULD BE RADIAL FIX
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
 ############################
@@ -207,9 +208,15 @@ def calc_forces(stress,dNdX,J):
     if (axi_symm):
         forces *= radius[gp]
   if (axi_symm):
+    #(srr-stt)/r x r dr dz x dt
     for gp in range(len(gauss_points)):
+      #RIGOUROUSLY SHOULD BE H[gp] * s(..)
+      #is value taken to the nodes
+      print ("Ngp ", N[gp])
+      #fax[:,0] += N[gp,:].T*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
+      #fax[:,1] += N[gp]* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
       fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
-      fax[:,1] += 0.25*stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
+      fax[:,1] += 0.25* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
   print ("forces")
   print (forces)
