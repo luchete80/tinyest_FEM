@@ -15,15 +15,15 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 
 red_int = False
 element_length = 1.0   # Length of the element
-axi_symm = False #FALSE: PLAIN STRAIN 
+axi_symm = True #FALSE: PLAIN STRAIN 
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-#tf = dt
-tf = 1.0e-3    
+tf = dt
+#tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -143,8 +143,7 @@ def calc_str_rate (dNdX,v):
         rot_rate[gp,0:2,0:2] = 0.5*(grad_v[gp]-grad_v[gp].T)
 
         if (axi_symm):
-          for k in range(m_nodxelem): 
-            str_rate [gp,2,2] += 0.25*v[k,0]/radius[gp]
+            str_rate [gp,2,2] = np.dot(N[gp],v[:,0])/radius[gp]
 # print("strain rate:\n" ,str_rate)
     return str_rate, rot_rate
 
@@ -209,11 +208,11 @@ def calc_forces(stress,dNdX,J):
         forces *= radius[gp]
   if (axi_symm):
     for gp in range(len(gauss_points)):
-      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp] 
-      fax[:,1] += 0.25*stress[gp,0,1] * gauss_weights[gp] 
+      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
+      fax[:,1] += 0.25*stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
-  # print ("forces")
-  # print (forces)
+  print ("forces")
+  print (forces)
   return forces
 
 
@@ -222,8 +221,18 @@ J, detJ, dNdX = calc_jacobian(x)
 print ("Jacobian\n", J[0])
 print ("det J \n", detJ[0])
 vol_0 = calc_vol(detJ)
-nod_mass = vol_0 * rho / m_nodxelem 
-print ("nodmass\n",nod_mass)
+nod_mass = vol_0 * rho / m_nodxelem
+radius =calc_radius(N)
+#only for this example case
+if (axi_symm):
+    radius =calc_radius(N)
+    rr = 0.0
+    for i in range(m_gp_count):
+        rr+=radius[i]
+    rr/=m_gp_count
+    print ("avg radius", rr)
+    nod_mass *=rr*2.0 *np.pi
+print ("nodmass ",nod_mass)
 # accel ()= forces/mass
 
 rho_b = 0.8182  # DEFAULT SPECTRAL RADIUS
