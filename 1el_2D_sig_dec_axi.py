@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = True #FALSE: PLAIN STRAIN 
 
@@ -200,14 +200,14 @@ def calc_forces(stress,dNdX,J):
   fax = np.zeros((m_nodxelem,m_dim))
   
   B = np.zeros((m_dim, m_nodxelem))
-  
+  f= 1.0
   for gp in range(len(gauss_points)):
     for i in range(m_nodxelem):
       B[0, i] = dNdX[gp,0,i]
       B[1, i] = dNdX[gp,1,i]    
-    forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp]
     if (axi_symm):
-        forces *= radius[gp]
+        f = radius[gp]
+    forces +=  np.dot(B.T,stress[gp,0:2,0:2]) *  np.linalg.det(J[gp]) * gauss_weights[gp] *f
   if (axi_symm):
     #(srr-stt)/r x r dr dz x dt
     for gp in range(len(gauss_points)):
@@ -216,8 +216,9 @@ def calc_forces(stress,dNdX,J):
       print ("Ngp ", N[gp])
       #fax[:,0] += N[gp,:].T*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
       #fax[:,1] += N[gp]* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
-      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * np.linalg.det(J[gp]) * gauss_weights[gp]  #SHAPE MAT
-      fax[:,1] += 0.25* stress[gp,0,1] * np.linalg.det(J[gp]) * gauss_weights[gp] #SHAPE MAT
+      f = np.linalg.det(J[gp]) * gauss_weights[gp]
+      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * f  #SHAPE MAT
+      fax[:,1] += 0.25* stress[gp,0,1] * f #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
   print ("forces")
   print (forces)
