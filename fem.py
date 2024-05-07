@@ -20,7 +20,7 @@ class Domain:
     self.m_red_int = True
     print ("Domain!")
     self.m_dim = 2
-    if m_red_int:
+    if self.m_red_int:
       self.gauss_points = np.array([[0.0, 0.0]])
       self.gauss_weights = np.array([4.0])
       m_gp_count = 1
@@ -35,30 +35,38 @@ class Domain:
   def allocateNodal(self,n):
     x,a,v = np.zeros((n,self.m_dim))
 
-  def addBoxLength(self, ex, ey, ez):
-    nel = np.zeros(3)
-    self.node_count = (ex+1)*(ey+1)*(ez+1)
+  def addBoxLength(self, lx,ly, le):
+    ex = int(lx /le); ey = int(ly/le);
+    ez = 1;
+    r = le/2.0
+    nel = np.array([ex,ey,ez])
+    Xp = np.zeros(self.m_dim)
+    self.node_count = (ex+1)*(ey+1)
+    print ("Node count "  + str(self.node_count))
+    self.x = np.zeros((self.node_count,self.m_dim))
     
-    if (dim == 2):
+    if (self.m_dim == 2):
       # !write(*,*) "Box Particle Count is ", node_count
-      p = 1
+      p = 0
     # !do while (Xp(3) <= (V(3)+Lz))
       # j = 1;         Xp(2) = V(2)
-      while (j <= nel[1]):
-        i = 1
-        # Xp(1) = V(1)
-        while (i <= nel(1)):
-          # nod%x(p,:) = Xp(:)
+      for j in range(nel[1]+1):
+        Xp[1] = 0.0
+        for i in range(nel[1]+1):
+          self.x[p,:] = Xp[:]
           # print *,"node ",p , "X: ",Xp(:)
           # p = p + 1
-          # Xp(1) = Xp(1) + 2 * r
-          i += 1
+          Xp[0] += le
+          p +=1
+        Xp[1] += le
         # end do
         # Xp(2) = Xp(2) + 2 * r
-        j += 1
+
       # end do 
       # Xp(3) = Xp(3) + 2 * r
-    print (ex, ey, ez)
+      
+      print (ex, ey, ez)
+      print ("Generated " + str(p) + " nodes")
         
   
 # detJ = np.zeros((m_gp_count))
@@ -97,7 +105,7 @@ class Domain:
       # print(dNdX)
 
 
-  self.gp_count = len(self.gauss_points)
+  #self.gp_count = len(self.gauss_points)
 
   # Finite element JACOBIAN AND DERIVATIVES CALC
   def calc_jacobian(pos):
