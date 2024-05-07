@@ -217,8 +217,10 @@ def calc_forces(stress,dNdX,J):
       #fax[:,0] += N[gp,:].T*(stress[gp,0,0]-stress[gp,2,2]) * gauss_weights[gp]  #SHAPE MAT
       #fax[:,1] += N[gp]* stress[gp,0,1] * gauss_weights[gp] #SHAPE MAT
       f = np.linalg.det(J[gp]) * gauss_weights[gp]
-      fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * f  #0,25 is from pass to nod, SHAPE MAT
-      fax[:,1] += 0.25* stress[gp,0,1] * f #SHAPE MAT
+      fax[:,0] -= N[gp,0,:]*(stress[gp,0,0]-stress[gp,2,2]) * f
+      #fax[:,0] += 0.25*(stress[gp,0,0]-stress[gp,2,2]) * f  #0,25 is from pass to nod, SHAPE MAT
+      fax[:,1] -= N[gp,0,:]*stress[gp,0,1] * f
+      #fax[:,1] += 0.25* stress[gp,0,1] * f #SHAPE MAT
     forces = (forces + fax)*2.0 * np.pi
   #print ("forces")
   #print (forces)
