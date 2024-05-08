@@ -67,6 +67,8 @@ class Domain:
 
     detJ = np.zeros((e,gp))
     dNdX = np.zeros((e,gp, self.dim, self.nodxelem)) 
+
+    f_i = np.zeros((e,self.nodxelem,self.dim))
     # dNdrs = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
 
     # strain = np.zeros((m_gp_count,m_dim, m_dim))
@@ -206,14 +208,14 @@ class Domain:
   #               = [dh2/dx dh2/dy ]   [ syx syy]
   def calc_forces(self):
     B = np.zeros((m_dim, m_nodxelem))
-    self.forces = 0.0
+    self.fi = 0.0
     for e in range(self.elem_count):
       for gp in range(len(gauss_points)):
           for i in range(m_nodxelem):
               B[0, i] = dNdX[e,gp,0,i]
               B[1, i] = dNdX[e,gp,1,i]
           #TO OPTIMIZE MULTIPLY ONLY NON SPARSE ELEMENTS
-          self.forces +=  np.dot(B.T,self.stress[e,gp]) *  np.linalg.det(self.J[gp]) * self.gauss_weights[gp]
+          self.fi[e] +=  np.dot(B.T,self.stress[e,gp]) *  np.linalg.det(self.J[gp]) * self.gauss_weights[gp]
       # print ("forces")
       # print (forces)
       return forces
