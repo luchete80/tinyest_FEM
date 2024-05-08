@@ -15,12 +15,12 @@ class Domain:
 # u_tot  = np.zeros((m_nodxelem,2))
 # prev_a = np.zeros((m_nodxelem,2)) 
   def __init__(self):
-    self.m_dim = 2
-    self.m_nodxelem = 4
-    self.m_red_int = True
+    self.dim = 2
+    self.nodxelem = 4
+    self.red_int = True
     print ("Domain!")
-    self.m_dim = 2
-    if self.m_red_int:
+    self.dim = 2
+    if self.red_int:
       self.gauss_points = np.array([[0.0, 0.0]])
       self.gauss_weights = np.array([4.0])
       m_gp_count = 1
@@ -33,25 +33,29 @@ class Domain:
       self.gauss_weights = np.array([1, 1, 1, 1])
       m_gp_count = 4
   def allocateNodal(self,n):
-    x,a,v = np.zeros((n,self.m_dim))
-
+    self.x = np.zeros((n,self.dim))
+    self.u = np.zeros((n,self.dim))
+    self.v = np.zeros((n,self.dim))
+    self.a = np.zeros((n,self.dim))
+    self.prev_a = np.zeros((n,self.dim))    
+  
   def addBoxLength(self, lx,ly, le):
     ex = int(lx /le); ey = int(ly/le);
     ez = 1;
     r = le/2.0
     nel = np.array([ex,ey,ez])
-    Xp = np.zeros(self.m_dim)
+    Xp = np.zeros(self.dim)
     self.node_count = (ex+1)*(ey+1)
     print ("Node count "  + str(self.node_count))
-    self.x = np.zeros((self.node_count,self.m_dim))
+    self.allocateNodal(self.node_count)
     
-    if (self.m_dim == 2):
+    if (self.dim == 2):
       # !write(*,*) "Box Particle Count is ", node_count
       p = 0
     # !do while (Xp(3) <= (V(3)+Lz))
       # j = 1;         Xp(2) = V(2)
       for j in range(nel[1]+1):
-        Xp[1] = 0.0
+        Xp[0] = 0.0
         for i in range(nel[1]+1):
           self.x[p,:] = Xp[:]
           # print *,"node ",p , "X: ",Xp(:)
@@ -67,7 +71,7 @@ class Domain:
       
       print (ex, ey, ez)
       print ("Generated " + str(p) + " nodes")
-        
+      print (self.x)
   
 # detJ = np.zeros((m_gp_count))
 # dNdX = np.zeros((m_gp_count, m_dim, m_nodxelem)) 
@@ -94,7 +98,7 @@ class Domain:
             
             # elem%dHxy_detJ(e,gp,:,:) = elem%dHxy_detJ(e,gp,:,:) * 0.25d0
   def shape_functions(self,xi, eta):
-      dNdX_ = np.zeros((m_dim, m_nodxelem))
+      dNdX_ = np.zeros((self.dim, self.nodxelem))
       N = np.array([(1-xi)*(1-eta)/4,
                     (1+xi)*(1-eta)/4,
                     (1+xi)*(1+eta)/4,
@@ -193,25 +197,25 @@ class Domain:
 #print ("nodmass\n",nod_mass)
 ## accel ()= forces/mass
 
-#rho_b = 0.8182  # DEFAULT SPECTRAL RADIUS
 
-#alpha = (2.0 * rho_b - 1.0) / (1.0 + rho_b)
-#beta  = (5.0 - 3.0 * rho_b) / ((1.0 + rho_b) * (1.0 + rho_b) * (2.0 - rho_b))
-#gamma = 1.5 - alpha;
 
 #print ("V", a)
 
-  def solve(dt):
-     ################################# MAIN LOOP ###################################
+  def solve(self,tf, dt):
+    rho_b = 0.8182  # DEFAULT SPECTRAL RADIUS
+    alpha = (2.0 * rho_b - 1.0) / (1.0 + rho_b)
+    beta  = (5.0 - 3.0 * rho_b) / ((1.0 + rho_b) * (1.0 + rho_b) * (2.0 - rho_b))
+    gamma = 1.5 - alpha;
+################################# MAIN LOOP ###################################
     t = 0.0
     while (t < tf):
         print ("Time: ", t)
         # !!! PREDICTION PHASE
-        u = dt * (v + (0.5 - beta) * dt * prev_a)
+        self.u = dt * (self.v + (0.5 - beta) * dt * prev_a)
         # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
-        v = v + (1.0-gamma)* dt * prev_a
-        a[:,:] = 0.0
-        impose_bc(v, a)
+        self.v +=  (1.0-gamma)* dt * prev_a
+        self.a[:,:] = 0.0
+        impose_bc(self.v, self.a)
 
         J, detJ, dNdX = calc_jacobian(x)
         # print ("Deriv\n",dNdX[0])
@@ -226,15 +230,15 @@ class Domain:
         stress =  calc_stress(strain,dt)
         # print ("stress\n",stress)
         forces =  calc_forces(stress,dNdX,J)
-        a = -forces/nod_mass
+        self.a = -forces/nod_mass
         
-        a = a - alpha * prev_a
-        a = a / (1.0 - alpha)
-        v = v + gamma * dt * a  
+        self.a -= alpha * prev_a
+        self.a = self.a / (1.0 - alpha)
+        self.v = self.v + gamma * dt * self.a  
 
-        impose_bc (v, a) #REINFORCE VELOCITY BC
+        impose_bc (self.v, self.a) #REINFORCE VELOCITY BC
 
-        u = u + beta * dt * dt * a   
+        self.u += beta * dt * dt * self.a   
         # nod%u = nod%u + u
         x = x + u
         
