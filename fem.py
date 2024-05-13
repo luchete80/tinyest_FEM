@@ -26,6 +26,7 @@ class Domain:
     self.red_int = False
     self.mat_E = 0.0;    self.mat_nu = 0.0;    self.mat_G = 0.0;
     self.mat_rho = 0.0
+    self.tot_mass = 0.0
     print ("Domain!")
     self.dim = 2
     if self.red_int:
@@ -55,6 +56,8 @@ class Domain:
     self.prev_a = np.zeros((n,self.dim))    
     self.forces = np.zeros((n,self.dim))
     self.mass   = np.zeros(n)
+    self.is_bcv = np.zeros((n,self.dim),dtype='bool') 
+    self.is_fix = np.zeros((n,self.dim),dtype='bool') 
   
   def allocateElemental(self,e):
     gp = self.gp_count
@@ -85,6 +88,9 @@ class Domain:
     print ("Node count "  + str(self.node_count))
     self.allocateNodal(self.node_count)
     self.allocateElemental(self.elem_count)
+    self.tot_mass = lx * ly * self.mat_rho
+    print ("tot mass ", self.tot_mass)
+    
     
     if (self.dim == 2):
       # !write(*,*) "Box Particle Count is ", node_count
@@ -233,8 +239,13 @@ class Domain:
 
 
 #print ("V", a)
+#TO MODIFY
+
 
   def solve(self,tf, dt):
+    self.mass[:] = self.tot_mass/self.node_count
+    print ("NODAL  mass (FROM AVG): ", self.mass[0])
+
     rho_b = 0.8182  # DEFAULT SPECTRAL RADIUS
     alpha = (2.0 * rho_b - 1.0) / (1.0 + rho_b)
     beta  = (5.0 - 3.0 * rho_b) / ((1.0 + rho_b) * (1.0 + rho_b) * (2.0 - rho_b))
