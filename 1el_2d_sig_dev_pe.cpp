@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <math.h>
+#include <iostream>
+
+using namespace std;
 
 #define m_dim 2
 #define m_nodxelem 4
@@ -26,7 +29,7 @@ double gauss_points[m_nodxelem][2]={{-0.577350269, -0.577350269},
                                     {0.577350269, -0.577350269},
                                     { 0.577350269,  0.577350269},
                                     {-0.577350269,  0.577350269}};
-double gauss_weights[m_gp_count];
+double gauss_weights[m_gp_count] = {1.,1.,1.,1.};
 double detJ[m_gp_count];
 double dNdX[m_gp_count][m_dim][m_nodxelem];
 double str_rate[m_gp_count][3][3];
@@ -61,7 +64,6 @@ void shape_functions(double xi, double eta, double N[], double dNdX_[][m_nodxele
     dNdX_[1][2] = (1 + xi) / 4;
     dNdX_[1][3] = (1 - xi) / 4;
     
-    printf ("dNdx", dNdX_[0][0]);
 }
 
 void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_nodxelem][2][2]) {
@@ -196,6 +198,7 @@ int main() {
     calc_jacobian(x, J);
 
     double vol_0 = calc_vol(detJ);
+    cout << "vol 0 "<<vol_0<<endl;
     double nod_mass = vol_0 * rho / m_nodxelem;
 
     double rho_b = 0.8182;
