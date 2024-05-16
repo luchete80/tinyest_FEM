@@ -116,13 +116,14 @@ class Domain:
       print ("Generated " + str(p) + " nodes")
       print (self.x)
   
+  def impose_bcv(self):
+    for n in range(self.node_count):
+      for d in range(self.dim):
+        if (self.is_fix(n,d)):
+          self.v[n,d] = 0.0
 
-  def impose_bc(self, vel, accel):
-    vel[2,1] = vel[3,1] = -1.0
-    vel[0,:] = vel[1,1] = 0.0
-
-    accel[2,1] = accel[3,1] = 0.0
-    accel[0,:] = accel[1,1] = 0.0
+        # if (self.is_bcv(n,d)):
+          # self.v[n,d] = 0.0
 
     
   # Define shape functions and their derivatives for 2D quadrilateral element
