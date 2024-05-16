@@ -6,7 +6,7 @@ using namespace std;
 
 #define m_dim 2
 #define m_nodxelem 4
-#define m_gp_count 4
+#define m_gp_count 1
 
 double E = 206e9;  // Young's modulus in Pa
 double nu = 0.3;   // Poisson's ratio
@@ -25,11 +25,13 @@ double v[m_nodxelem][m_dim];
 double a[m_nodxelem][m_dim];
 double u[m_nodxelem][m_dim];
 
-double gauss_points[m_nodxelem][2]={{-0.577350269, -0.577350269},
-                                    {0.577350269, -0.577350269},
-                                    { 0.577350269,  0.577350269},
-                                    {-0.577350269,  0.577350269}};
-double gauss_weights[m_gp_count] = {1.,1.,1.,1.};
+// double gauss_points[m_nodxelem][2]={{-0.577350269, -0.577350269},
+                                    // {0.577350269, -0.577350269},
+                                    // { 0.577350269,  0.577350269},
+                                    // {-0.577350269,  0.577350269}};
+                                    double gauss_points[1][2] = {{0,0}};
+// double gauss_weights[m_gp_count] = {1.,1.,1.,1.};
+double gauss_weights[m_gp_count] = {1.};
 double detJ[m_gp_count];
 double dNdX[m_gp_count][m_dim][m_nodxelem];
 double str_rate[m_gp_count][3][3];
@@ -48,7 +50,7 @@ void impose_bc(double vel[m_nodxelem][m_dim], double accel[m_nodxelem][m_dim]) {
     accel[0][0] = accel[0][1] = accel[1][1] = 0.0;
 }
 
-void shape_functions(double xi, double eta, double N[], double dNdX_[][m_nodxelem]) {
+void shape_functions(double xi, double eta, double N[m_nodxelem], double dNdX_[m_dim][m_nodxelem]) {
     N[0] = (1 - xi) * (1 - eta) / 4;
     N[1] = (1 + xi) * (1 - eta) / 4;
     N[2] = (1 + xi) * (1 + eta) / 4;
@@ -66,7 +68,7 @@ void shape_functions(double xi, double eta, double N[], double dNdX_[][m_nodxele
     
 }
 
-void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_nodxelem][2][2]) {
+void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_gp_count][2][2]) {
     double N[m_nodxelem];
     double dNdX_[m_dim][m_nodxelem];
     double xi, eta;
@@ -74,16 +76,26 @@ void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_nodxelem][2][2]) {
         xi = gauss_points[gp][0];
         eta = gauss_points[gp][1];
         shape_functions(xi, eta, N, dNdX_);        
-        for (int i = 0; i < m_dim; i++) {
-            for (int j = 0; j < m_dim; j++) {
-                J[gp][i][j] = 0.0;
-                for (int k = 0; k < m_nodxelem; k++) {
-                    J[gp][i][j] += dNdX_[i][k] * pos[k][j];
+        // for (int i = 0; i < m_dim; i++) {
+            // for (int j = 0; j < m_dim; j++) {
+                // J[gp][i][j] = 0.0;
+                // for (int k = 0; k < m_nodxelem; k++) {
+                    // J[gp][i][j] += dNdX_[i][k] * pos[k][j];
+                    for (int i = 0; i < m_dim; i++){
+                      J[gp][0][i] = -pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i];
+                      J[gp][1][i] = -pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i] ;                     
+                    }
+                      
+        // elem%jacob(e,gp,1,:) = -x2(1,:)+x2(2,:)+x2(3,:)-x2(4,:)
+        // elem%jacob(e,gp,2,:) = -x2(1,:)-x2(2,:)+x2(3,:)+x2(4,:)                
+                
+  
                     //printf("pos %.6e", pos[k][j]);
-                    //printf ("J %.6e\n", J[gp][i][j]);
-                }
-            }
-        }
+                    // printf ("J %.6e", J[gp][i][j]);
+                //}
+            //}
+        //}
+         printf ("J %.6e %.6e \n %.6e %.6e\n", J[gp][0][0], J[gp][0][1], J[gp][1][0], J[gp][1][1] );
         detJ[gp] = J[gp][0][0] * J[gp][1][1] - J[gp][0][1] * J[gp][1][0];
         printf ("detJ %.6e\n", detJ[gp]);
     }
