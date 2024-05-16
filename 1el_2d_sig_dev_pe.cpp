@@ -6,7 +6,7 @@ using namespace std;
 
 #define m_dim 2
 #define m_nodxelem 4
-#define m_gp_count 1
+#define m_gp_count 4
 
 double E = 206e9;  // Young's modulus in Pa
 double nu = 0.3;   // Poisson's ratio
@@ -129,6 +129,7 @@ void calc_str_rate(double dNdX[m_nodxelem][m_dim][m_nodxelem], double v[m_nodxel
         for (int i = 0; i < m_dim; i++) {
             for (int j = 0; j < m_dim; j++) {
                 str_rate[gp][i][j] = 0.5 * (grad_v[gp][i][j] + grad_v[gp][j][i]);
+                printf ("%.6e ",str_rate[gp][i][j]);
             }
         }
     }
@@ -285,6 +286,13 @@ int main() {
     for (int i = 0; i < m_nodxelem; i++) {
         for (int j = 0; j < m_dim; j++) {
             printf("%.6e ", u_tot[i][j]);
+        }
+      printf("\n");
+    }
+
+    for (int i = 0; i < m_nodxelem; i++) {
+        for (int j = 0; j < m_dim; j++) {
+            printf("%.6e ", a[i][j]);
         }
       printf("\n");
     }
