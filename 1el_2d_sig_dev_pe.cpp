@@ -20,7 +20,7 @@ int axi_symm = 0;            //FALSE: PLAIN STRAIN
 double dt = 0.8e-5;
 double tf = 0.8e-5;
 //double tf = 1.0e-3;
-double x[m_nodxelem][m_dim] = {{0.0,0.0},{0.0,0.1},{0.1,0.1},{0.0,0.1}};
+double x[m_nodxelem][m_dim] = {{0.0,0.0},{0.1,0.0},{0.1,0.1},{0.0,0.1}};
 double v[m_nodxelem][m_dim];
 double a[m_nodxelem][m_dim];
 double u[m_nodxelem][m_dim];
@@ -76,28 +76,29 @@ void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_gp_count][2][2]) {
         xi = gauss_points[gp][0];
         eta = gauss_points[gp][1];
         shape_functions(xi, eta, N, dNdX_);        
-        // for (int i = 0; i < m_dim; i++) {
-            // for (int j = 0; j < m_dim; j++) {
-                // J[gp][i][j] = 0.0;
-                // for (int k = 0; k < m_nodxelem; k++) {
-                    // J[gp][i][j] += dNdX_[i][k] * pos[k][j];
-                    for (int i = 0; i < m_dim; i++){
-                      J[gp][0][i] = -pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i];
-                      J[gp][1][i] = -pos[0][i]-pos[1][i]+pos[2][i]+pos[3][i] ;                     
-                    }
+        for (int i = 0; i < m_dim; i++) {
+            for (int j = 0; j < m_dim; j++) {
+                J[gp][i][j] = 0.0;
+                for (int k = 0; k < m_nodxelem; k++) {
+                    J[gp][i][j] += dNdX_[i][k] * pos[k][j];
                       
         // elem%jacob(e,gp,1,:) = -x2(1,:)+x2(2,:)+x2(3,:)-x2(4,:)
         // elem%jacob(e,gp,2,:) = -x2(1,:)-x2(2,:)+x2(3,:)+x2(4,:)                
                 
   
-                    //printf("pos %.6e", pos[k][j]);
+                    // printf("pos %.6e", pos[k][j]);
                     // printf ("J %.6e", J[gp][i][j]);
-                //}
-            //}
-        //}
-         printf ("J %.6e %.6e \n %.6e %.6e\n", J[gp][0][0], J[gp][0][1], J[gp][1][0], J[gp][1][1] );
+                }
+            }
+        }
+        //1gp
+        // for (int i = 0; i < m_dim; i++){
+          // J[gp][0][i] = 0.25*(-pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i]);
+          // J[gp][1][i] = 0.25*(-pos[0][i]-pos[1][i]+pos[2][i]+pos[3][i]);                     
+        // }
+        //printf ("J %.6e %.6e \n %.6e %.6e\n", J[gp][0][0], J[gp][0][1], J[gp][1][0], J[gp][1][1] );
         detJ[gp] = J[gp][0][0] * J[gp][1][1] - J[gp][0][1] * J[gp][1][0];
-        printf ("detJ %.6e\n", detJ[gp]);
+        //printf ("detJ %.6e\n", detJ[gp]);
     }
 }
 
