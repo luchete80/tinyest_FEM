@@ -83,7 +83,7 @@ void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_gp_count][2][2]) {
                     // J[gp][i][j] += dNdX_[i][k] * pos[k][j];
                     for (int i = 0; i < m_dim; i++){
                       J[gp][0][i] = -pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i];
-                      J[gp][1][i] = -pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i] ;                     
+                      J[gp][1][i] = -pos[0][i]-pos[1][i]+pos[2][i]+pos[3][i] ;                     
                     }
                       
         // elem%jacob(e,gp,1,:) = -x2(1,:)+x2(2,:)+x2(3,:)-x2(4,:)
