@@ -6,7 +6,7 @@ using namespace std;
 
 #define m_dim 2
 #define m_nodxelem 4
-#define m_gp_count 4
+#define m_gp_count 1
 
 double E = 206e9;  // Young's modulus in Pa
 double nu = 0.3;   // Poisson's ratio
@@ -198,9 +198,9 @@ void dev(double t[3][3], double dev[3][3]) {
     
 }
 
-void calc_stress2(double str_rate[m_nodxelem][3][3], double rot_rate[m_nodxelem][3][3], double tau[m_nodxelem][3][3], double p[m_nodxelem], double dt, double stress[m_nodxelem][3][3]) {
-    double srt[m_nodxelem][3][3];
-    double rs[m_nodxelem][3][3];
+void calc_stress2(double str_rate[m_gp_count][3][3], double rot_rate[m_gp_count][3][3], double tau[m_gp_count][3][3], double p[m_gp_count], double dt, double stress[m_gp_count][3][3]) {
+    double srt[m_gp_count][3][3];
+    double rs[m_gp_count][3][3];
     double d[3][3];
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int i = 0; i < 3; i++) {
