@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = False
+red_int = Falsez
 element_length = 1.0   # Length of the element
 axi_symm = True #FALSE: PLAIN STRAIN 
 

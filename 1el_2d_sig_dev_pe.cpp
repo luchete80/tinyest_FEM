@@ -25,6 +25,9 @@ double v[m_nodxelem][m_dim];
 double a[m_nodxelem][m_dim];
 double u[m_nodxelem][m_dim];
 double u_tot[m_nodxelem][m_dim] ={{0.,0.},{0.,0.},{0.,0.},{0.,0.}};
+
+double f_hg[m_nodxelem][m_dim];
+
 // double gauss_points[m_nodxelem][2]={{-0.577350269, -0.577350269},
                                     // {0.577350269, -0.577350269},
                                     // { 0.577350269,  0.577350269},
@@ -125,7 +128,7 @@ void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_gp_count][2][2]) {
     }
 }
 
-double calc_vol(double detJ[m_nodxelem]) {
+double calc_vol(double detJ[m_gp_count]) {
     double vol = 0.0;
     for (int gp = 0; gp < m_gp_count; gp++) {
         vol += detJ[gp] * gauss_weights[gp];
@@ -133,7 +136,7 @@ double calc_vol(double detJ[m_nodxelem]) {
     return vol;
 }
 
-void velocity_gradient_tensor(double dNdX[m_nodxelem][m_dim][m_nodxelem], double vel[m_nodxelem][m_dim], double grad_v[m_nodxelem][m_dim][m_dim]) {
+void velocity_gradient_tensor(double dNdX[m_gp_count][m_dim][m_nodxelem], double vel[m_nodxelem][m_dim], double grad_v[m_nodxelem][m_dim][m_dim]) {
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int I = 0; I < m_dim; I++) {
             for (int J = 0; J < m_dim; J++){ 
@@ -147,7 +150,7 @@ void velocity_gradient_tensor(double dNdX[m_nodxelem][m_dim][m_nodxelem], double
     }
 }
 
-void calc_str_rate(double dNdX[m_nodxelem][m_dim][m_nodxelem], double v[m_nodxelem][m_dim], double str_rate[m_nodxelem][3][3],double rot_rate[m_nodxelem][3][3]) {
+void calc_str_rate(double dNdX[m_gp_count][m_dim][m_nodxelem], double v[m_nodxelem][m_dim], double str_rate[m_gp_count][3][3],double rot_rate[m_gp_count][3][3]) {
     double grad_v[m_nodxelem][m_dim][m_dim];
     velocity_gradient_tensor(dNdX, v, grad_v);
     for (int gp = 0; gp < m_gp_count; gp++) {
@@ -176,14 +179,14 @@ void calc_strain(double str_rate[m_gp_count][3][3], double dt, double strain[m_g
     }
 }
 
-void calc_pressure(double K_, double dstr[m_nodxelem][3][3], double stress[m_nodxelem][3][3], double pres[m_nodxelem]) {
+void calc_pressure(double K_, double dstr[m_gp_count][3][3], double stress[m_gp_count][3][3], double pres[m_gp_count]) {
     double pi_ = 0.0;
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int i = 0; i < 3; i++) {
             pi_ += dstr[gp][i][i];
         }
     }
-    pi_ = -pi_ / m_nodxelem;
+    pi_ = -pi_ / m_gp_count;
     for (int gp = 0; gp < m_gp_count; gp++) {
         pres[gp] = -1.0 / 3.0 * (stress[gp][0][0] + stress[gp][1][1] + stress[gp][2][2]) + K_ * pi_;
         printf("pres %e ",pres[gp]);
@@ -240,6 +243,23 @@ void calc_forces(double stress[m_nodxelem][3][3], double dNdX[m_nodxelem][m_dim]
         }
         
     }
+}
+
+void calc_hg_forces(double rho, double vol, double cs,double forces[m_nodxelem][m_dim]){
+
+  double Sig [4][4] = {{1.,-1.,1.,-1.}, {1.,-1.,1.,-1.},{1.,-1.,1.,-1.},{1.,-1.,1.,-1.}};
+  double hmod[m_dim][4];
+  int jmax = 4;
+  // for gp in range(len(gauss_points)):
+    // for j in range(jmax):
+      // for n in range(m_nodxelem):
+        // hmod[:,j] +=v[n,:]*Sig[j,n]
+  // for j in range(jmax):
+    // for n in range(m_nodxelem):
+      // f_[n,:] -=hmod[:,j]*Sig[j,n] 
+  // ch = 0.06 * pow (vol,0.66666) * rho * 0.25 * cs
+
+  // f_ *= ch
 }
 
 int main() {
@@ -328,7 +348,7 @@ int main() {
         t += dt;
     }
 
-     printf("\n -- DISP\n");
+     printf("\n -- DISP --\n");
     for (int i = 0; i < m_nodxelem; i++) {
         for (int j = 0; j < m_dim; j++) {
             printf("%.6e ", u_tot[i][j]);
