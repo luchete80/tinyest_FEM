@@ -14,9 +14,9 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = Falsez
+red_int = False
 element_length = 1.0   # Length of the element
-axi_symm = True #FALSE: PLAIN STRAIN 
+axi_symm = False #FALSE: PLAIN STRAIN 
 
 # Define nodal v (dummy data for demonstration)
 vel = np.full(m_dim * m_nodxelem, 0.1)

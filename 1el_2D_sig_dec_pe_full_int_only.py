@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 # Define element properties
 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -24,7 +24,7 @@ vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
 tf = dt
-#tf = 1.0e-3    
+tf = 1.0e-3    
 x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0., 0.1]])
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
 
@@ -106,7 +106,7 @@ def calc_jacobian(pos):
         # print ("invJ", invJ)
         dNdX[gp] = np.dot(invJ,dNdrs[gp])
         # print ("test", -invJ[0,0]-invJ[0,1])
-        # print ("deriv",dNdX[gp] )
+        print ("deriv",dNdX[gp] )
     return J, detJ, dNdX
 
 def calc_vol(detJ):
