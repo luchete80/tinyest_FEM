@@ -18,8 +18,8 @@ double element_length = 1.0; // Length of the element
 int axi_symm = 0;            //FALSE: PLAIN STRAIN
 
 double dt = 0.8e-5;
-double tf = 0.8e-5;
-//double tf = 1.0e-3;
+//double tf = 0.8e-5;
+double tf = 1.0e-3;
 double x[m_nodxelem][m_dim] = {{0.0,0.0},{0.1,0.0},{0.1,0.1},{0.0,0.1}};
 double v[m_nodxelem][m_dim];
 double a[m_nodxelem][m_dim];
@@ -245,11 +245,28 @@ void calc_forces(double stress[m_nodxelem][3][3], double dNdX[m_nodxelem][m_dim]
     }
 }
 
-void calc_hg_forces(double rho, double vol, double cs,double forces[m_nodxelem][m_dim]){
+void calc_hg_forces(double rho, double vol, double cs,double fhg[m_nodxelem][m_dim]){
 
   double Sig [4][4] = {{1.,-1.,1.,-1.}, {1.,-1.,1.,-1.},{1.,-1.,1.,-1.},{1.,-1.,1.,-1.}};
-  double hmod[m_dim][4];
+  double hmod[m_dim][4]={{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}};
   int jmax = 4;
+
+  for (int j = 0; j < jmax; j++) 
+    for (int i = 0; i < m_nodxelem; i++) 
+      for (int d = 0; d < m_dim; d++) {
+        hmod[d][j] +=v[i][d]*Sig[j][i];
+        printf("hmod: %6e", hmod[d][j]);
+      }
+
+  double ch = 0.06 * pow (vol,0.6666666) * rho * 0.25 * cs;
+  
+      for (int j = 0; j < jmax; j++) 
+        for (int i = 0; i < m_nodxelem; i++) 
+          for (int d = 0; d < m_dim; d++) 
+            fhg[i][d] -=ch*hmod[d][j]*Sig[j][i];
+  
+
+  
   // for gp in range(len(gauss_points)):
     // for j in range(jmax):
       // for n in range(m_nodxelem):
@@ -284,6 +301,8 @@ int main() {
     double alpha = (2.0 * rho_b - 1.0) / (1.0 + rho_b);
     double beta = (5.0 - 3.0 * rho_b) / ((1.0 + rho_b) * (1.0 + rho_b) * (2.0 - rho_b));
     double gamma = 1.5 - alpha;
+    
+    double mat_cs = sqrt(K_mod/rho);
 
     double t = 0.0;
     while (t < tf) {
@@ -315,10 +334,12 @@ int main() {
         calc_stress2(str_rate, rot_rate, tau, pres, dt, stress);
 
         calc_forces(stress, dNdX, detJ, a);
+        
+        calc_hg_forces(rho, vol_0, mat_cs, f_hg);
 
         for (int i = 0; i < m_nodxelem; i++) {
             for (int j = 0; j < m_dim; j++) {
-                a[i][j] = -a[i][j] / nod_mass - alpha * prev_a[i][j];
+                a[i][j] = -a[i][j] / nod_mass + f_hg[i][j] - alpha * prev_a[i][j];
                 a[i][j] /= (1.0 - alpha);
                 v[i][j] += gamma * dt * a[i][j];
             }
