@@ -24,15 +24,19 @@ double x[m_nodxelem][m_dim] = {{0.0,0.0},{0.1,0.0},{0.1,0.1},{0.0,0.1}};
 double v[m_nodxelem][m_dim];
 double a[m_nodxelem][m_dim];
 double u[m_nodxelem][m_dim];
-
+double u_tot[m_nodxelem][m_dim] ={{0.,0.},{0.,0.},{0.,0.},{0.,0.}};
 // double gauss_points[m_nodxelem][2]={{-0.577350269, -0.577350269},
                                     // {0.577350269, -0.577350269},
                                     // { 0.577350269,  0.577350269},
                                     // {-0.577350269,  0.577350269}};
-                                    double gauss_points[1][2] = {{0,0}};
+                                    
 // double gauss_weights[m_gp_count] = {1.,1.,1.,1.};
+
+double gauss_points[1][2] = {{0,0}};
 double gauss_weights[m_gp_count] = {1.};
+
 double detJ[m_gp_count];
+double invJ[m_gp_count][2][2];
 double dNdX[m_gp_count][m_dim][m_nodxelem];
 double str_rate[m_gp_count][3][3];
 double rot_rate[m_gp_count][3][3];
@@ -96,8 +100,27 @@ void calc_jacobian(double pos[m_nodxelem][m_dim], double J[m_gp_count][2][2]) {
           // J[gp][0][i] = 0.25*(-pos[0][i]+pos[1][i]+pos[2][i]-pos[3][i]);
           // J[gp][1][i] = 0.25*(-pos[0][i]-pos[1][i]+pos[2][i]+pos[3][i]);                     
         // }
-        //printf ("J %.6e %.6e \n %.6e %.6e\n", J[gp][0][0], J[gp][0][1], J[gp][1][0], J[gp][1][1] );
+        // printf ("J %.6e %.6e \n %.6e %.6e\n", J[gp][0][0], J[gp][0][1], J[gp][1][0], J[gp][1][1] );
+        double adJ[2][2]; 
+        adJ[0][0]= J[gp][1][1];adJ[1][1]= J[gp][0][0];
+        adJ[0][1]=-J[gp][0][1];adJ[1][0]=-J[gp][1][0];
+        
         detJ[gp] = J[gp][0][0] * J[gp][1][1] - J[gp][0][1] * J[gp][1][0];
+        for (int i = 0; i < m_dim; i++) {
+            for (int j = 0; j < m_dim; j++) {
+                  invJ[gp][i][j] = 1.0/detJ[gp]*adJ[i][j];
+            }
+        }
+
+        for (int i = 0; i < m_dim; i++) {
+            for (int j = 0; j < m_nodxelem; j++) {
+              dNdX[gp][i][j] = 0.0;
+              for (int k = 0; k < m_dim; k++) 
+                dNdX[gp][i][j] += invJ[gp][i][k]*dNdX_[k][j];
+            }
+        }                
+        
+        
         //printf ("detJ %.6e\n", detJ[gp]);
     }
 }
@@ -113,33 +136,41 @@ double calc_vol(double detJ[m_nodxelem]) {
 void velocity_gradient_tensor(double dNdX[m_nodxelem][m_dim][m_nodxelem], double vel[m_nodxelem][m_dim], double grad_v[m_nodxelem][m_dim][m_dim]) {
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int I = 0; I < m_dim; I++) {
-            for (int J = 0; J < m_dim; J++) {
+            for (int J = 0; J < m_dim; J++){ 
+                grad_v[gp][I][J] = 0.0;
                 for (int k = 0; k < m_nodxelem; k++) {
                     grad_v[gp][I][J] += dNdX[gp][J][k] * vel[k][I];
                 }
+                // printf ("grad v %e " , grad_v[gp][I][J]);
             }
         }
     }
 }
 
-void calc_str_rate(double dNdX[m_nodxelem][m_dim][m_nodxelem], double v[m_nodxelem][m_dim], double str_rate[m_nodxelem][3][3]) {
+void calc_str_rate(double dNdX[m_nodxelem][m_dim][m_nodxelem], double v[m_nodxelem][m_dim], double str_rate[m_nodxelem][3][3],double rot_rate[m_nodxelem][3][3]) {
     double grad_v[m_nodxelem][m_dim][m_dim];
     velocity_gradient_tensor(dNdX, v, grad_v);
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int i = 0; i < m_dim; i++) {
             for (int j = 0; j < m_dim; j++) {
                 str_rate[gp][i][j] = 0.5 * (grad_v[gp][i][j] + grad_v[gp][j][i]);
-                printf ("%.6e ",str_rate[gp][i][j]);
+                rot_rate[gp][i][j] = 0.5 * (grad_v[gp][i][j] - grad_v[gp][j][i]);
+                 printf ("str rat %.6e ",str_rate[gp][i][j]);
+
             }
         }
+        str_rate[gp][2][0]=rot_rate[gp][2][0]=0.0;                str_rate[gp][0][2]=rot_rate[gp][0][2]=0.0;        
+        str_rate[gp][2][2]=rot_rate[gp][2][2]=0.0;
     }
 }
 
-void calc_strain(double str_rate[m_nodxelem][3][3], double dt, double strain[m_nodxelem][3][3]) {
+void calc_strain(double str_rate[m_gp_count][3][3], double dt, double strain[m_gp_count][3][3]) {
+    printf ("strain\n");
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 strain[gp][i][j] = dt * str_rate[gp][i][j];
+                printf ("strain %.6e ",strain[gp][i][j]);
             }
         }
     }
@@ -155,45 +186,59 @@ void calc_pressure(double K_, double dstr[m_nodxelem][3][3], double stress[m_nod
     pi_ = -pi_ / m_nodxelem;
     for (int gp = 0; gp < m_gp_count; gp++) {
         pres[gp] = -1.0 / 3.0 * (stress[gp][0][0] + stress[gp][1][1] + stress[gp][2][2]) + K_ * pi_;
+        printf("pres %e ",pres[gp]);
     }
+    
 }
 
-double dev(double t[3][3]) {
-    double d= 1.0 / 3.0 * (t[0][0] + t[1][1] + t[2][2]);
+void dev(double t[3][3], double dev[3][3]) {
+    for (int i = 0; i < 3; i++) 
+        for (int j = 0; j < 3; j++) 
+          dev[i][j]= t[i][j]- 1.0 / 3.0 * (t[0][0] + t[1][1] + t[2][2])*(i==j);
     
-    return d;
 }
 
 void calc_stress2(double str_rate[m_nodxelem][3][3], double rot_rate[m_nodxelem][3][3], double tau[m_nodxelem][3][3], double p[m_nodxelem], double dt, double stress[m_nodxelem][3][3]) {
     double srt[m_nodxelem][3][3];
     double rs[m_nodxelem][3][3];
-
+    double d[3][3];
     for (int gp = 0; gp < m_gp_count; gp++) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                srt[gp][i][j] = tau[gp][i][j] * rot_rate[gp][i][j];
-                rs[gp][i][j] = rot_rate[gp][i][j] * tau[gp][i][j];
-                tau[gp][i][j] += dt * (2.0 * mat_G * (dev(str_rate[gp])) + rs[gp][i][j] + srt[gp][i][j]);
+                srt[gp][i][j] = rs[gp][i][j] = 0.0;
+                for (int k=0;k<m_dim;k++){
+                  srt[gp][i][j] += tau[gp][i][k] * rot_rate[gp][j][k];
+                  rs[gp][i][j] += rot_rate[gp][i][k] * tau[gp][k][j];
+                }
+                dev(str_rate[gp],d);
+                tau[gp][i][j] += dt * ((2.0 * mat_G *d[i][j]) + rs[gp][i][j] + srt[gp][i][j]);
                 stress[gp][i][j] = tau[gp][i][j] - p[gp] * (i == j);
+                printf ("stress %e",stress[gp][i][j]);
             }
+            printf("\n");
         }
     }
 }
 
-void calc_forces(double stress[m_nodxelem][3][3], double dNdX[m_nodxelem][m_dim][m_nodxelem], double J[m_nodxelem][2][2], double forces[m_nodxelem][m_dim]) {
+void calc_forces(double stress[m_nodxelem][3][3], double dNdX[m_nodxelem][m_dim][m_nodxelem], double detJ[m_nodxelem], double forces[m_nodxelem][m_dim]) {
     double B[m_dim][m_nodxelem];
-
+    double s2[2][2];
+    
     for (int gp = 0; gp < m_gp_count; gp++) {
-        for (int i = 0; i < m_dim; i++) {
-            for (int j = 0; j < m_nodxelem; j++) {
-                B[i][j] = dNdX[gp][i][j];
-            }
-        }
+        for (int i = 0; i < m_dim; i++) 
+            for (int j = 0; j < m_dim; j++) 
+              s2[i][j]=stress[gp][i][j];
+
         for (int i = 0; i < m_nodxelem; i++) {
             for (int j = 0; j < m_dim; j++) {
-                forces[gp][i] += B[j][i] * (stress[gp][0][0] + stress[gp][1][1]) * J[gp][0][0] * J[gp][1][1] * gauss_weights[gp];
+              forces[i][j] = 0.0;
+              for (int k = 0; k < m_dim; k++) 
+                forces[i][j] += dNdX[gp][k][i] * s2[k][j]*detJ[gp] * gauss_weights[gp];
+              printf ("forces %e",forces[i][j]);
             }
+            printf("\n");
         }
+        
     }
 }
 
@@ -205,7 +250,7 @@ int main() {
     printf("Imposing bc..\n");
     impose_bc(v, a);
     printf("Done");
-    double u_tot[m_nodxelem][m_dim];
+
     double prev_a[m_nodxelem][m_dim];
 
     double J[m_gp_count][2][2];
@@ -241,15 +286,15 @@ int main() {
 
         calc_jacobian(x, J);
 
-        calc_str_rate(dNdX, v, str_rate);
+        calc_str_rate(dNdX, v, str_rate, rot_rate);
         double str_inc[m_nodxelem][3][3];
-        calc_strain(rot_rate, dt, str_inc);
+        calc_strain(str_rate, dt, str_inc);
 
         calc_pressure(K_mod, str_inc, stress, pres);
-
+        
         calc_stress2(str_rate, rot_rate, tau, pres, dt, stress);
 
-        calc_forces(stress, dNdX, J, a);
+        calc_forces(stress, dNdX, detJ, a);
 
         for (int i = 0; i < m_nodxelem; i++) {
             for (int j = 0; j < m_dim; j++) {
@@ -283,6 +328,7 @@ int main() {
         t += dt;
     }
 
+     printf("\n -- DISP\n");
     for (int i = 0; i < m_nodxelem; i++) {
         for (int j = 0; j < m_dim; j++) {
             printf("%.6e ", u_tot[i][j]);
