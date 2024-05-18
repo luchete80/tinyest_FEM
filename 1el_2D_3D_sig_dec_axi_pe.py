@@ -111,7 +111,8 @@ def shape_functions(gp):
       dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
       dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
     else:
-      dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
+      dNdX_[0,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8
+                            [-(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])
       dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])      
     
     return N, dNdX_
