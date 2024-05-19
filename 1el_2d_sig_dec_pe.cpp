@@ -251,6 +251,10 @@ void calc_hg_forces(double rho, double vol, double cs,double fhg[m_nodxelem][m_d
   double hmod[m_dim][4]={{0.0,0.0,0.0,0.0},{0.0,0.0,0.0,0.0}};
   int jmax = 4;
 
+    for (int i = 0; i < m_nodxelem; i++) 
+      for (int d = 0; d < m_dim; d++) 
+        fhg[i][d] = 0.0;
+      
   for (int j = 0; j < jmax; j++) 
     for (int i = 0; i < m_nodxelem; i++) 
       for (int d = 0; d < m_dim; d++) {
@@ -258,7 +262,7 @@ void calc_hg_forces(double rho, double vol, double cs,double fhg[m_nodxelem][m_d
         printf("hmod: %6e", hmod[d][j]);
       }
 
-  double ch = 0.06 * pow (vol,0.6666666) * rho * 0.25 * cs;
+  double ch = 0.12 * pow (vol,0.666666666) * rho * 0.250 * cs;
   
       for (int j = 0; j < jmax; j++) 
         for (int i = 0; i < m_nodxelem; i++) 
@@ -339,7 +343,7 @@ int main() {
 
         for (int i = 0; i < m_nodxelem; i++) {
             for (int j = 0; j < m_dim; j++) {
-                a[i][j] = -a[i][j] / nod_mass + f_hg[i][j] - alpha * prev_a[i][j];
+                a[i][j] = (-a[i][j] + f_hg[i][j])/ nod_mass  - alpha * prev_a[i][j];
                 a[i][j] /= (1.0 - alpha);
                 v[i][j] += gamma * dt * a[i][j];
             }
