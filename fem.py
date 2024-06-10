@@ -46,6 +46,10 @@ class Domain:
     print("mat G", self.mat_G)
     self.K_mod = self.mat_E / ( 3.0*(1.0 -2.0*self.mat_nu) )
     self.mat_cs = np.sqrt(self.K_mod/self.mat_rho)
+    
+  def AssemblyForces(self):
+    for n in self.node_count:
+      
 
   def allocateNodal(self,n):
     print ("Allocating nodal, dim ", self.dim)
@@ -116,12 +120,14 @@ class Domain:
       print ("Generated " + str(p) + " nodes")
       print (self.x)
   
-  def impose_bcv(self):
+  def impose_bc(self):
     for n in range(self.node_count):
       for d in range(self.dim):
-        if (self.is_fix(n,d)):
+        if (self.is_fix[n,d]):
           self.v[n,d] = 0.0
+          self.a[n,d] = 0.0
 
+          
         # if (self.is_bcv(n,d)):
           # self.v[n,d] = 0.0
 
@@ -261,7 +267,7 @@ class Domain:
         # !!! CAN BE UNIFIED AT THE END OF STEP by v= (a(t+dt)+a(t))/2. but is not convenient for variable time step
         self.v +=  (1.0-gamma)* dt * self.prev_a
         self.a[:,:] = 0.0
-        self.impose_bc(self.v, self.a)
+        self.impose_bc()
 
         self.calc_jacobian
 
@@ -282,7 +288,7 @@ class Domain:
         self.a = self.a / (1.0 - alpha)
         self.v = self.v + gamma * dt * self.a  
 
-        self.impose_bc (self.v, self.a) #REINFORCE VELOCITY BC
+        self.impose_bc () #REINFORCE VELOCITY BC
 
         u_ += beta * dt * dt * self.a   
         # nod%u = nod%u + u

@@ -11,4 +11,5 @@ dom.mat_rho = 7850.0
 dom.calcMatConst()
 dom.addBoxLength(0.1,0.1,0.1)  #(self, ex, ey, ez):
 
+
 dom.solve(dt,dt)
