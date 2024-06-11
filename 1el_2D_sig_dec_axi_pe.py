@@ -14,7 +14,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -23,8 +23,8 @@ vel = np.full(m_dim * m_nodxelem, 0.1)
 vel[5] = vel[7] = -1.0
 
 dt = 0.8e-5
-#tf = 2.0*dt
-tf = 1.0e-3    
+tf = 1.0*dt
+#tf = 1.0e-3    
 x      =  np.array([[0.1, 0.], [0.2, 0.], [0.2, 0.1], [0.1, 0.1]])
 #x      =  np.array([[0., 0.], [0.1, 0.], [0.1, 0.1], [0.0, 0.1]]) #SHOULD BE RADIAL FIX
 v      = np.array([[0, 0], [0, 0], [0, -1], [0, -1]])  # Example v at nodes
