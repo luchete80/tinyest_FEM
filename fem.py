@@ -44,7 +44,7 @@ class Domain:
     self.f_i[:,:] = 0.0
     for e in range(self.elem_count):
       for ne in range(self.nodxelem):
-        self.f_i[self.elnod[e,ne],:] += self.f_e[e,ne,:]
+        self.f_i[self.elnod[e,ne],:] += self.f_e[e,ne,:] - self.f_e_hg[e,ne,:]
       
 
   def allocateNodal(self,n):
@@ -65,6 +65,7 @@ class Domain:
     self.sigma = np.zeros((e,gp,3,3))
     self.tau   = np.zeros((e,gp,3,3))
     self.p     = np.zeros((e,gp))
+    self.vol     = np.zeros(e)
     
     self.str_rate = np.zeros((e,gp,3,3))
     self.rot_rate = np.zeros((e,gp,3,3))
@@ -75,7 +76,8 @@ class Domain:
     self.J    = np.zeros((e,gp,self.dim, self.dim))
     self.dNdX = np.zeros((e,gp, self.dim, self.nodxelem)) 
 
-    self.f_e = np.zeros((e,self.nodxelem,self.dim))
+    self.f_e    = np.zeros((e,self.nodxelem,self.dim))
+    self.f_e_hg = np.zeros((e,self.nodxelem,self.dim))
     # dNdrs = np.zeros((m_gp_count, dim, nodxelem)) 
 
     # strain = np.zeros((m_gp_count,dim, dim))
@@ -205,12 +207,13 @@ class Domain:
           # print ("deriv",dNdX[gp] )
           # print ("dNdx ", self.dNdX)
 
-  def calc_vol(detJ):
-    vol = 0.0
-    for gp in range(self.gp_count):
-        vol += detJ[gp] * gauss_weights[gp]
+  def calc_vol(self):
+    for e in range(self.elem_count):
+      self.vol[e] = 0.0
+      for gp in range(self.gp_count):
+        self.vol[e] += self.detJ[e,gp] * self.gauss_weights[gp]
         # print ("vol " + str(vol))
-    return vol
+
   
 
     
@@ -281,6 +284,33 @@ class Domain:
       # print (self.f_e)
       # return forces
 
+  def calc_hg_forces(self):
+    # f_ = np.zeros((m_nodxelem,m_dim))
+    Sig = np.array([[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.],[1.,-1.,1.,-1.]])
+    hmod = np.zeros((self.dim,4))
+    jmax = 4
+    self.f_e_hg[:, :] = 0.0
+    
+    for e in range(self.elem_count):
+      hmod[:,:] = 0.0
+      v = self.getVel(e)
+      # print ("vel ", v)
+      # for gp in range(self.gp_count):
+      for j in range(jmax):
+        for n in range(self.nodxelem):
+          hmod[:,j] +=v[n,:]*Sig[j,n]
+      
+      for j in range(jmax):
+        for n in range(self.nodxelem):
+          # f_[n,:] -=hmod[:,j]*Sig[j,n] 
+          self.f_e_hg[e,n,:] -=hmod[:,j]*Sig[j,n] 
+      
+      # ch = 0.06 * pow (self.vol[e],0.66666) * rho * 0.25 * cs
+      ch = 0.06 * pow (self.vol[e],2./3.) * self.mat_rho * 0.25 * self.mat_cs
+      self.f_e_hg[e] *= ch
+      # print ("hg forces", self.f_e_hg[e])
+    # f_ *= ch
+    
 
 ##strain_rate = calc_strain_rate(v)
 #J, detJ, dNdX = calc_jacobian(x)
@@ -322,6 +352,7 @@ class Domain:
       self.impose_bc()
 
       self.calc_jacobian()
+      self.calc_vol()
 
       self.calc_str_rate()
       self.calc_pressure(dt)
@@ -334,6 +365,7 @@ class Domain:
       # print ("stress\n",stress)
       #print ("a ", self.a)
       self.calc_forces()
+      self.calc_hg_forces()
       self.AssemblyForces()
       
       for d in range (self.dim):
