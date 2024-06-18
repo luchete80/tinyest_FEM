@@ -92,6 +92,7 @@ class Domain:
     Xp = np.zeros(self.dim)
     self.node_count = (ex+1)*(ey+1)
     print ("Node count "  + str(self.node_count))
+    print ("El count ", self.elem_count)
     self.allocateNodal(self.node_count)
     self.allocateElemental(self.elem_count)
     self.tot_mass = lx * ly * self.mat_rho
@@ -119,14 +120,18 @@ class Domain:
       # Xp(3) = Xp(3) + 2 * r
 
       ei = 0
+      print ("nel ", nel[0]+1, nel[1]+1)
       for ey in range (nel[1]):
         for ex in range (nel[0]):
+          print ("ei ", ei)
           nb1 = (nel[0]+1)* ey    + ex;    
           nb2 = (nel[0]+1)*(ey+1) + ex;
           self.elnod[ei,0] = nb1;                                
           self.elnod[ei,1] = nb1 + 1;                             
           self.elnod[ei,2] = nb2 + 1;                        
-          self.elnod[ei,3] = (nel[0]+1)*(ey+1) + ex;           
+          self.elnod[ei,3] = nb2;    
+          print ("elnod ", ei,self.elnod[ei,:])
+          ei+=1
 			
       print ("ELNOD", self.elnod)
 				 # for (int i=0;i<nodxelem;i++)cout << elnod_h[ei+i]<<", ";
@@ -178,6 +183,7 @@ class Domain:
     pos = np.zeros((self.nodxelem,self.dim))
     for n in range (self.nodxelem):
       nglob = self.elnod[e,n]
+      # print ("nglob ", nglob)
       pos[n,:] = self.x[nglob,:]
     return pos
     
@@ -194,6 +200,7 @@ class Domain:
   def calc_jacobian(self):
     for e in range(self.elem_count):
       pos = self.getPos(e)
+      print ("pos ", pos)
       for gp in range(self.gp_count):
           xi, eta = self.gauss_points[gp]
           N, dNdrs = self.shape_functions(xi, eta)
