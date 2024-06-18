@@ -200,7 +200,7 @@ class Domain:
   def calc_jacobian(self):
     for e in range(self.elem_count):
       pos = self.getPos(e)
-      print ("pos ", pos)
+      # print ("pos ", pos)
       for gp in range(self.gp_count):
           xi, eta = self.gauss_points[gp]
           N, dNdrs = self.shape_functions(xi, eta)
