@@ -5,7 +5,7 @@ import numpy as np
 E   = 206e9  # Young's modulus in Pa
 nu  = 0.3   # Poisson's ratio
 rho = 7850.0
-m_dim = 2
+m_dim = 3
 
 if (m_dim == 2):
   m_nodxelem = 4
@@ -111,11 +111,12 @@ def shape_functions(gp):
       dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
       dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
     else:
-      dNdX_[0,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8],
-                            [-(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])
-      dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])      
+      dNdX_[0,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8,
+                             -(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])
+      dNdX_[1,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8,
+                             -(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])      
     
-    return N, dNdX_
+    return dNdX_
     # print(dNdX)
 
 
@@ -123,10 +124,10 @@ gp_count = len(gauss_points)
 
 # Finite element JACOBIAN AND DERIVATIVES CALC
 def calc_jacobian(pos):
-    J = np.zeros((gp_count, 2, 2))
+    J = np.zeros((gp_count, m_dim, m_dim))
     detJ = np.zeros((gp_count))
     for gp in range(len(gauss_points)):
-        N[gp], dNdrs[gp] = shape_functions(gp)
+        dNdrs[gp] = shape_functions(gp)
         J[gp] = np.dot(dNdrs[gp], pos)
         detJ[gp] = np.linalg.det(J[gp])
         # print("det J\n", detJ)

@@ -10,7 +10,7 @@ dom.mat_nu = 0.3 #PASS TO MAT CLAS..
 dom.mat_rho = 7850.0
 
 dom.calcMatConst()
-dx = 0.05
+dx = 0.1
 #def addBoxLength(self, lx, ly, le):
 dom.addBoxLength(0.1,0.1,dx)  #(self, ex, ey, le):
 
