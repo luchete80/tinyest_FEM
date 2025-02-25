@@ -6,6 +6,18 @@ gauss_points = np.array([[-0.577350269, -0.577350269],
                          [-0.577350269,  0.577350269]])
 gauss_weights = np.array([1, 1, 1, 1])
 
+
+def shape_functions(xi, eta):
+    dNdX_ = np.zeros((2, 4))
+    N = np.array([(1-xi)*(1-eta)/4,
+                  (1+xi)*(1-eta)/4,
+                  (1+xi)*(1+eta)/4,
+                  (1-xi)*(1+eta)/4])
+    dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
+    dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
+    return N, dNdX_
+
+
 def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
     m_dim = 2  # 2D problem
     m_nodxelem = 4  # Quadrilateral element
@@ -34,16 +46,6 @@ def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
         # OR: K += np.dot(np.dot(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
         # B.T @ elasticity_matrix → Multiplies the transposed strain-displacement matrix (B.T) with the elasticity matrix.
     return K
-
-def shape_functions(xi, eta):
-    dNdX_ = np.zeros((2, 4))
-    N = np.array([(1-xi)*(1-eta)/4,
-                  (1+xi)*(1-eta)/4,
-                  (1+xi)*(1+eta)/4,
-                  (1-xi)*(1+eta)/4])
-    dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
-    dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
-    return N, dNdX_
 
 def apply_boundary_condition(K, dof):
     """
@@ -81,10 +83,10 @@ def solve_displacement(K, F):
     return X
     
 # Example usage
-node_coords = np.array([[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01]])
+node_coords = np.array([[0, 0], [1., 0], [1., 0.01], [0, 1.]])
 E, nu = 200e9, 0.3  # Example values for steel
 elasticity_matrix = elasticity_matrix_plane_strain(E, nu)
-thickness = 1.0
+thickness = 0.1
 K = compute_stiffness_matrix(node_coords, elasticity_matrix, thickness)
 
 apply_boundary_condition(K,0)
