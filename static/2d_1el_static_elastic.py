@@ -18,6 +18,7 @@ def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
         
         J = np.dot(dNdrs, node_coords)
         detJ = np.linalg.det(J)
+        print (detJ)
         invJ = np.linalg.inv(J)
         
         dNdX = np.dot(invJ, dNdrs)
@@ -29,8 +30,9 @@ def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
             B[2, i*2]   = dNdX[1, i]
             B[2, i*2+1] = dNdX[0, i]
         
-        K += B.T @ elasticity_matrix @ B * detJ * gauss_weights[gp] * thickness
+        #K += B.T @ elasticity_matrix @ B * detJ * gauss_weights[gp] * thickness
         #Equivalent to. K += np.matmul(np.matmul(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
+        K += np.matmul(np.matmul(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
         # OR: K += np.dot(np.dot(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
         # B.T @ elasticity_matrix → Multiplies the transposed strain-displacement matrix (B.T) with the elasticity matrix.
     
@@ -73,16 +75,31 @@ def elasticity_matrix_plane_strain(E, nu):
 
 # Plane strain elasticity matrix is 3x3, considering strain in z-direction as zero.
 # Plane stress elasticity matrix is also 3x3 but assumes zero stress in z-direction.
+
+def solve_displacement(K, F):
+    """
+    Solve the linear system K * X = F for the displacement vector X.
+    """
+    X = np.linalg.solve(K, F)
+    return X
     
 # Example usage
-node_coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+node_coords = np.array([[0, 0], [0.1, 0], [0.1, 0.1], [0, 0.1]])
 E, nu = 200e9, 0.3  # Example values for steel
 elasticity_matrix = elasticity_matrix_plane_strain(E, nu)
-thickness = 1.0
+thickness = 0.1
 K = compute_stiffness_matrix(node_coords, elasticity_matrix, thickness)
 
 apply_boundary_condition(K,0)
 apply_boundary_condition(K,1)
 apply_boundary_condition(K,3)
 print(K)
+
+F = np.zeros(K.shape[0])
+F[-2] = 1000  # Apply force at last node in x-direction
+print(F)
+# Solve for displacements
+print("Displacements")
+X = solve_displacement(K, F)
+print(X)
 
