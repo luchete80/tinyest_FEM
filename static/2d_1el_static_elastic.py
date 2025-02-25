@@ -18,9 +18,8 @@ def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
         
         J = np.dot(dNdrs, node_coords)
         detJ = np.linalg.det(J)
-        print (detJ)
         invJ = np.linalg.inv(J)
-        
+
         dNdX = np.dot(invJ, dNdrs)
         
         B = np.zeros((3, m_nodxelem * m_dim))
@@ -30,12 +29,10 @@ def compute_stiffness_matrix(node_coords, elasticity_matrix, thickness):
             B[2, i*2]   = dNdX[1, i]
             B[2, i*2+1] = dNdX[0, i]
         
-        #K += B.T @ elasticity_matrix @ B * detJ * gauss_weights[gp] * thickness
+        K += B.T @ elasticity_matrix @ B * detJ * gauss_weights[gp] * thickness
         #Equivalent to. K += np.matmul(np.matmul(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
-        K += np.matmul(np.matmul(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
         # OR: K += np.dot(np.dot(B.T, elasticity_matrix), B) * detJ * gauss_weights[gp] * thickness
         # B.T @ elasticity_matrix → Multiplies the transposed strain-displacement matrix (B.T) with the elasticity matrix.
-    
     return K
 
 def shape_functions(xi, eta):
@@ -84,10 +81,10 @@ def solve_displacement(K, F):
     return X
     
 # Example usage
-node_coords = np.array([[0, 0], [0.1, 0], [0.1, 0.1], [0, 0.1]])
+node_coords = np.array([[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01]])
 E, nu = 200e9, 0.3  # Example values for steel
 elasticity_matrix = elasticity_matrix_plane_strain(E, nu)
-thickness = 0.1
+thickness = 1.0
 K = compute_stiffness_matrix(node_coords, elasticity_matrix, thickness)
 
 apply_boundary_condition(K,0)
