@@ -18,7 +18,7 @@ K_mod = E / ( 3.0*(1.0 -2.0*nu) )
 mat_cs = np.sqrt(K_mod/rho)
 # Define element 
 
-red_int = False
+red_int = True
 element_length = 1.0   # Length of the element
 axi_symm = False #FALSE: PLAIN STRAIN 
 
@@ -110,10 +110,10 @@ def shape_functions(gp):
     if (m_dim ==2):
       dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
       dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
-    else:
-      dNdX_[0,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8
-                            [-(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])
-      dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])      
+    #else:
+      #dNdX_[0,:] = np.array([-(1-eta)*(1-t)/8, (1-eta)*(1-t)/8, (1+eta)*(1-t)/8, -(1+eta)*(1-t)/8
+      #                      [-(1-eta)*(1+t)/8, (1-eta)*(1+t)/8, (1+eta)*(1+t)/8, -(1+eta)*(1+t)/8])
+      #dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])      
     
     return N, dNdX_
     # print(dNdX)
