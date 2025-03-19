@@ -13,19 +13,6 @@ m_gp_count = 1
 
 dNdX = np.zeros((m_dim, m_nodxelem)) 
 dNdrs = np.zeros((m_dim, m_nodxelem)) 
-# Define shape functions and their derivatives for 2D quadrilateral element
-# def shape_functions(xi, eta):
-    # dNdX_ = np.zeros((m_dim, m_nodxelem))
-    # N = np.array([0.125,0.125,0.125,0.125,0.125,0.125,0.125,0.125])
-    # # dNdX_[0,:] = np.array([-(1-eta)/4, (1-eta)/4, (1+eta)/4, -(1+eta)/4])
-    # # dNdX_[1,:] = np.array([-(1-xi)/4, -(1+xi)/4, (1+xi)/4, (1-xi)/4])
-    # return N, dNdX_
-    # print(dNdX)
-# # Gauss quadrature points and weights
-# gauss_points = np.array([[-0.577350269, -0.577350269],
-                         # [ 0.577350269, -0.577350269],
-                         # [ 0.577350269,  0.577350269],
-                         # [-0.577350269,  0.577350269]])
 
 #gauss_weights = np.array([1, 1, 1, 1])
 w = 8.0 #FAUSS 
