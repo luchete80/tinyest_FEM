@@ -7,8 +7,8 @@ t = 0.01   # Thickness (m)
 
 # Geometry (node positions for a quadrilateral element)
 nodes = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]])
-import numpy as np
 
+# Shape functions for MITC4 element (4-node quadrilateral)
 def shape_functions(xi, eta):
     """Shape functions and their derivatives for MITC4 elements."""
     
@@ -18,7 +18,7 @@ def shape_functions(xi, eta):
     N3 = 0.25 * (1 + xi) * (1 + eta)
     N4 = 0.25 * (1 - xi) * (1 + eta)
     
-    # First derivatives of shape functions w.r.t. xi and eta
+    # Derivatives of shape functions w.r.t. xi and eta
     dN1_dxi = -0.25 * (1 - eta)
     dN1_deta = -0.25 * (1 - xi)
     
@@ -31,32 +31,12 @@ def shape_functions(xi, eta):
     dN4_dxi = -0.25 * (1 + eta)
     dN4_deta = 0.25 * (1 - xi)
     
-    # Second derivatives of shape functions
-    d2N1_dxi2 = 0  # ∂²N1/∂xi²
-    d2N1_deta2 = 0  # ∂²N1/∂eta²
-    d2N1_dxdy = 0.25  # ∂²N1/∂xi∂eta
-    
-    d2N2_dxi2 = 0
-    d2N2_deta2 = 0
-    d2N2_dxdy = -0.25
-    
-    d2N3_dxi2 = 0
-    d2N3_deta2 = 0
-    d2N3_dxdy = 0.25
-    
-    d2N4_dxi2 = 0
-    d2N4_deta2 = 0
-    d2N4_dxdy = -0.25
-
-    # Returning the shape functions, first derivatives, and second derivatives
+    # Returning the shape functions and their derivatives
     N = np.array([N1, N2, N3, N4])
     dN_dxi = np.array([dN1_dxi, dN2_dxi, dN3_dxi, dN4_dxi])
     dN_deta = np.array([dN1_deta, dN2_deta, dN3_deta, dN4_deta])
-    d2N_dxi2 = np.array([d2N1_dxi2, d2N2_dxi2, d2N3_dxi2, d2N4_dxi2])
-    d2N_deta2 = np.array([d2N1_deta2, d2N2_deta2, d2N3_deta2, d2N4_deta2])
-    d2N_dxdy = np.array([d2N1_dxdy, d2N2_dxdy, d2N3_dxdy, d2N4_dxdy])
     
-    return N, dN_dxi, dN_deta, d2N_dxi2, d2N_deta2, d2N_dxdy
+    return N, dN_dxi, dN_deta
 
 # Compute the membrane stiffness matrix
 def compute_membrane_stiffness(N, dN_dxi, dN_deta, material_properties, thickness, detJ, weight):
@@ -78,25 +58,27 @@ def compute_membrane_stiffness(N, dN_dxi, dN_deta, material_properties, thicknes
     K_m = np.dot(B_m.T, np.dot(D_m, B_m)) * thickness * detJ * weight
     return K_m
 
-def compute_bending_stiffness(N, d2N_dx2, d2N_dy2, d2N_dxdy, material_properties, thickness, detJ, weight):
+# Compute the bending stiffness matrix
+def compute_bending_stiffness(N, dN_dxi, dN_deta, material_properties, thickness, detJ, weight):
     E, nu = material_properties
-    
     # Bending stiffness matrix for thin shells
     D_b = E * thickness**3 / (12 * (1 - nu**2)) * np.array([[1, nu, 0],
                                                            [nu, 1, 0],
                                                            [0, 0, (1 - nu) / 2]])
 
-    # Create the bending strain-displacement matrix B
+    # Create the strain-displacement matrix B for bending
     B_b = np.zeros((3, 8))  # 4 nodes × 2 DOFs per node (rotations)
     for i in range(4):
-        B_b[0, 2*i] = d2N_dx2[i]    # Curvature κ_x
-        B_b[1, 2*i+1] = d2N_dy2[i]  # Curvature κ_y
-        B_b[2, 2*i] = d2N_dxdy[i]   # Twist curvature κ_xy
-        B_b[2, 2*i+1] = d2N_dxdy[i] # Twist curvature κ_xy
+        B_b[0, 2*i] = dN_dxi[i]
+        B_b[1, 2*i+1] = dN_deta[i]
+        B_b[2, 2*i] = dN_deta[i]
+        B_b[2, 2*i+1] = dN_dxi[i]
 
-    # Compute the bending stiffness matrix
-    K_b = np.dot(B_b.T, np.dot(D_b, B_b)) * detJ * weight
+    # Bending stiffness contribution
+    K_b = np.dot(B_b.T, np.dot(D_b, B_b)) * thickness * detJ * weight
     return K_b
+
+# Compute the shear stiffness matrix
 
 
 # Compute the shear stiffness matrix
@@ -154,7 +136,7 @@ def compute_stiffness_matrix(nodes, material_properties, thickness):
     # Loop over integration points
     for idx, (xi, eta) in enumerate(gauss_points):
         # Compute shape functions and derivatives
-        N, dN_dxi, dN_deta, d2N_dxi2, d2N_deta2,d2N_dxdy = shape_functions(xi, eta)
+        N, dN_dxi, dN_deta = shape_functions(xi, eta)
 
         # Compute Jacobian matrix
         J = compute_jacobian(dN_dxi, dN_deta, nodes)
@@ -167,10 +149,8 @@ def compute_stiffness_matrix(nodes, material_properties, thickness):
         K_m = compute_membrane_stiffness(N, dN_dxi, dN_deta, material_properties, thickness, detJ, weight)
 
         # Compute bending stiffness
-        
-        K_b = compute_bending_stiffness(N,  d2N_dxi2, d2N_deta2,d2N_dxdy, material_properties, thickness, detJ, weight)
-        print (K_b)
-        
+        K_b = compute_bending_stiffness(N, dN_dxi, dN_deta, material_properties, thickness, detJ, weight)
+
         # Compute shear stiffness
         K_s = compute_shear_stiffness(N, dN_dxi, dN_deta, material_properties, thickness, detJ, weight)
 
